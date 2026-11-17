@@ -1,0 +1,2353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071216">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>健身记录</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <style>
+:root {
+  --bg: #0e1116;
+  --bg2: #141a21;
+  --card: #171e26;
+  --card2: #1d2630;
+  --line: #26313d;
+  --text: #e9eef5;
+  --muted: #8b98a8;
+  --dim: #5f6b7a;
+  --accent: #4da3ff;
+  --accent2: #2f7fd1;
+  --green: #35c26b;
+  --red: #ff5f5f;
+  --amber: #f2a93b;
+  --gold: #ffd166;
+  --radius: 14px;
+  --tap: 44px;
+}
+body.theme-ocean {
+  --bg: #071216;
+  --bg2: #0a1a20;
+  --card: #0f2027;
+  --card2: #132a33;
+  --line: #1c3a44;
+  --text: #e6f4f5;
+  --muted: #8fb0b8;
+  --dim: #5f7b83;
+  --accent: #2dd4bf;
+  --accent2: #0f9e8e;
+  --green: #34d399;
+  --red: #fb7185;
+  --amber: #fbbf24;
+  --gold: #fcd34d;
+}
+body.theme-light {
+  --bg: #f5f7fa;
+  --bg2: #eaeef4;
+  --card: #ffffff;
+  --card2: #f0f3f8;
+  --line: #dbe2ea;
+  --text: #15202b;
+  --muted: #5b6878;
+  --dim: #8a97a7;
+  --accent: #2563eb;
+  --accent2: #1d4ed8;
+  --green: #15803d;
+  --red: #dc2626;
+  --amber: #b45309;
+  --gold: #a16207;
+}
+body.theme-light .card { box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06); }
+body.theme-light .timerbar-inner { box-shadow: 0 -8px 24px rgba(16,24,40,.08); }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  background:
+    radial-gradient(1100px 380px at 50% -8%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 70%),
+    var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: calc(15px * var(--font-scale, 1));
+  line-height: 1.45;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+body.has-timer { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+#app { max-width: 720px; margin: 0 auto; min-height: 100vh; }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+input, select, textarea {
+  font: inherit; color: var(--text); background: var(--bg2);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+}
+textarea { width: 100%; resize: vertical; min-height: 44px; }
+h1, h2, h3 { margin: 0; font-weight: 650; }
+h1 { font-size: 1.18em; }
+h2 { font-size: 1.02em; }
+h3 { font-size: .94em; }
+.muted { color: var(--muted); }
+.dim { color: var(--dim); }
+.small { font-size: .82em; }
+.tiny { font-size: .74em; }
+.mono { font-variant-numeric: tabular-nums; }
+.row { display: flex; align-items: center; gap: 8px; }
+.between { justify-content: space-between; }
+.wrap { flex-wrap: wrap; }
+.grow { flex: 1; min-width: 0; }
+.center { text-align: center; }
+.hidden { display: none !important; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar .title { font-weight: 650; font-size: 1.02em; }
+.topbar .sub { color: var(--muted); font-size: .78em; }
+
+.screen { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.card {
+  background: linear-gradient(180deg, var(--card2), var(--card));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.02), 0 10px 26px rgba(0,0,0,.14);
+}
+.card.tight { padding: 10px 12px; }
+.section-title { color: var(--muted); font-size: .8em; letter-spacing: .04em; margin: 4px 2px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: var(--tap); padding: 0 14px; border-radius: 12px;
+  background: var(--card2); border: 1px solid var(--line);
+  font-weight: 600; font-size: .95em;
+  transition: background .15s ease, border-color .15s ease, transform .1s ease;
+}
+.btn:active { transform: scale(.98); }
+.btn-primary {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #ffffff), var(--accent2));
+  border-color: var(--accent2); color: #fff;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+body.theme-ocean .btn-primary { color: #04211d; }
+.btn-danger { background: transparent; border-color: var(--red); color: var(--red); }
+.btn-ghost { background: transparent; }
+.btn-sm { min-height: 34px; padding: 0 10px; font-size: .82em; border-radius: 10px; }
+.btn-block { width: 100%; }
+.btn-big { min-height: 56px; font-size: 1.05em; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 999px;
+  background: var(--card2); border: 1px solid var(--line);
+  font-size: .74em; white-space: nowrap;
+}
+.chip.pos { color: var(--green); border-color: color-mix(in srgb, var(--green) 40%, var(--line)); }
+.chip.neg { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, var(--line)); }
+.chip.zero { color: var(--muted); }
+.chip.gold { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 45%, var(--line)); }
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+.zero { color: var(--muted); }
+
+.nav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; justify-content: center;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-inner { display: flex; width: 100%; max-width: 720px; }
+.nav button {
+  flex: 1; min-height: 56px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  color: var(--muted); font-size: .67em; position: relative;
+  transition: color .15s ease;
+}
+.nav button.active { color: var(--accent); }
+.nav button.active::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 26px; height: 2px; border-radius: 0 0 3px 3px; background: var(--accent);
+}
+.nav .ico { font-size: 1.25em; line-height: 1; display: flex; }
+.nav .ico svg { width: 21px; height: 21px; display: block; }
+
+.exercise-head { display: flex; align-items: flex-start; gap: 8px; }
+.exercise-head .name { font-weight: 650; font-size: 1.02em; }
+.exercise-head .meta { color: var(--muted); font-size: .76em; }
+.exercise-head .actions { display: flex; gap: 4px; margin-left: auto; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+.setrow {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 16px minmax(0, 1fr) 40px 28px;
+  align-items: center; gap: 3px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.setrow:first-of-type { border-top: 0; }
+.setrow.warmup { background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--muted) 8%, transparent) 6px 12px); border-radius: 8px; }
+.setrow.warmup .w { color: var(--muted); }
+.setrow.done .rep { color: var(--green); }
+.setrow .x { color: var(--dim); text-align: center; }
+.type-badge {
+  width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line);
+  color: var(--muted); font-size: .72em; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.type-badge.work { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.stepper { display: flex; align-items: center; justify-content: space-between; gap: 2px; }
+.stepper button {
+  width: 30px; height: 40px; border-radius: 9px; background: var(--card2);
+  border: 1px solid var(--line); font-size: 1em; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.stepper .val { min-width: 34px; text-align: center; font-weight: 700; font-size: 1.02em; font-variant-numeric: tabular-nums; }
+.stepper .val.small { font-size: .9em; }
+.donebtn {
+  width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); background: var(--card2); font-size: 1.1em;
+}
+.donebtn.on { background: color-mix(in srgb, var(--green) 18%, var(--card2)); color: var(--green); border-color: color-mix(in srgb, var(--green) 50%, var(--line)); }
+.delbtn { width: 32px; height: 42px; color: var(--dim); font-size: 1em; }
+
+.rpe-row { display: flex; gap: 6px; align-items: center; margin: 0 0 6px 34px; }
+.rpe-row select { padding: 3px 8px; font-size: .74em; border-radius: 8px; min-height: 0; }
+.rpe-chip { font-size: .72em; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.rpe-chip.set { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--line)); }
+
+.advice {
+  margin-top: 8px; padding: 10px 12px; border-radius: 12px;
+  background: color-mix(in srgb, var(--amber) 12%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--amber) 40%, var(--line));
+  color: var(--text); font-size: .86em;
+}
+.advice .row { margin-top: 8px; }
+.advice .why { color: var(--muted); font-size: .82em; margin-top: 2px; }
+
+.timerbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 29;
+  display: flex; justify-content: center;
+}
+body.has-nav .timerbar { bottom: calc(56px + env(safe-area-inset-bottom)); }
+.timerbar-inner {
+  width: 100%; max-width: 720px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: var(--card2);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 24px rgba(0,0,0,.25);
+}
+.timerbar .time { font-size: 1.35em; font-weight: 750; font-variant-numeric: tabular-nums; min-width: 92px; }
+.timerbar .time.over { color: var(--amber); }
+.timerbar .lbl { color: var(--muted); font-size: .72em; }
+
+.grid7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.daycell {
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 2px;
+  text-align: center; font-size: .7em; color: var(--muted); min-height: 62px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.daycell .d { font-weight: 700; color: var(--text); font-size: 1.05em; }
+.daycell.done { border-color: color-mix(in srgb, var(--green) 45%, var(--line)); background: color-mix(in srgb, var(--green) 8%, transparent); }
+.daycell.rest { opacity: .55; }
+.daycell.missed { border-color: color-mix(in srgb, var(--red) 40%, var(--line)); color: var(--red); }
+.daycell.today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+.list-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 0; border-top: 1px solid var(--line);
+}
+.list-item:first-child { border-top: 0; }
+.list-item .main { flex: 1; min-width: 0; }
+.list-item .t { font-weight: 600; }
+.list-item .s { color: var(--muted); font-size: .78em; }
+
+.metric-table { width: 100%; border-collapse: collapse; font-size: .84em; }
+.metric-table td { padding: 5px 0; border-top: 1px solid var(--line); }
+.metric-table tr:first-child td { border-top: 0; }
+.metric-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+
+details { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 8px; }
+details summary { color: var(--muted); font-size: .8em; cursor: pointer; }
+
+.switch-group { display: flex; flex-direction: column; }
+.switch-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.switch-row:first-child { border-top: 0; }
+.switch-row .main { flex: 1; }
+.switch-row .s { color: var(--muted); font-size: .75em; }
+.switch {
+  width: 46px; height: 28px; border-radius: 999px; background: var(--bg2);
+  border: 1px solid var(--line); position: relative; flex: none;
+}
+.switch::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%; background: var(--dim);
+  transition: transform .15s ease;
+}
+.switch.on { background: color-mix(in srgb, var(--accent) 30%, var(--bg2)); border-color: var(--accent); }
+.switch.on::after { transform: translateX(18px); background: var(--accent); }
+.switch.disabled { opacity: .45; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom));
+  transform: translateX(-50%); z-index: 50;
+  background: var(--card2); border: 1px solid var(--line);
+  color: var(--text); padding: 10px 14px; border-radius: 12px;
+  font-size: .86em; box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  max-width: 88vw;
+}
+.toast.err { border-color: var(--red); color: var(--red); }
+.toast .undo { color: var(--accent); font-weight: 700; margin-left: 10px; }
+
+.overlay {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(0,0,0,.55);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.sheet {
+  width: 100%; max-width: 720px; max-height: 82vh; overflow: auto;
+  background: var(--card); border-radius: 18px 18px 0 0;
+  padding: 16px; border: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.sheet .handle { width: 42px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 4px; }
+
+.banner {
+  padding: 10px 12px; border-radius: 12px; font-size: .82em;
+  background: color-mix(in srgb, var(--amber) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--amber) 35%, var(--line));
+}
+.stat-big { font-size: 1.7em; font-weight: 750; font-variant-numeric: tabular-nums; }
+.stat-label { color: var(--muted); font-size: .76em; }
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat-grid .card { padding: 12px 10px; min-width: 0; }
+.stat-grid .stat-big { font-size: 1.4em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.bar { height: 8px; border-radius: 999px; background: var(--bg2); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+.spark { width: 100%; height: 46px; display: block; }
+
+.picker-item { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
+.picker-item:first-child { border-top: 0; }
+
+.tpl-week-row { padding: 7px 0; border-top: 1px solid var(--line); }
+.tpl-week-row:first-of-type { border-top: 0; }
+.tpl-week-row select { min-width: 96px; }
+.tpl-item { border-top: 1px solid var(--line); padding: 10px 0; }
+.tpl-item:first-of-type { border-top: 0; }
+.tpl-head { display: flex; align-items: center; gap: 4px; }
+.tpl-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.tpl-fields label { display: flex; flex-direction: column; gap: 3px; font-size: .68em; color: var(--muted); }
+.tpl-fields input { width: 100%; min-width: 0; padding: 6px 8px; font-size: 1em; min-height: 34px; }
+@media (min-width: 560px) { .tpl-fields { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.chart { width: 100%; height: 90px; display: block; margin-top: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+@media (max-width: 380px) {
+  .setrow { grid-template-columns: 26px minmax(0, 1fr) 10px minmax(0, 1fr) 38px 26px; gap: 2px; }
+  .stepper button { width: 28px; }
+  .stepper .val { min-width: 30px; font-size: .92em; }
+}
+
+</style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="timerbar" class="timerbar"></div>
+  <div id="toast"></div>
+  <script>
+/* 健身记录 PWA · 纯逻辑核心（不依赖 DOM） */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.FitCore = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  const VERSION = 1;
+  const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const DAY_CN = { mon: '周一', tue: '周二', wed: '周三', thu: '周四', fri: '周五', sat: '周六', sun: '周日' };
+  const DAY_TYPE_CN = { push: '推日', pull: '拉日', legs: '腿日' };
+  const MUSCLE_CN = {
+    chest: '胸', shoulders: '肩', rear_delts: '后束', triceps: '三头',
+    back: '背', biceps: '二头', quads: '股四头', hamstrings: '腘绳肌',
+    glutes: '臀', calves: '小腿', core: '核心', other: '其他'
+  };
+
+  const FEATURES = [
+    { id: 'sessionRecord', name: '训练记录', group: '核心', def: true, locked: true },
+    { id: 'autoRecover', name: '中断恢复', group: '核心', def: true, locked: true },
+    { id: 'autoSnapshot', name: '每日快照', group: '数据', def: true, locked: true },
+    { id: 'exportImport', name: '导出 / 导入', group: '数据', def: true, locked: true },
+    { id: 'restTimer', name: '弹性休息计时', group: '记录', def: true },
+    { id: 'wakeLock', name: '屏幕常亮', group: '记录', def: true },
+    { id: 'rpe', name: 'RPE 记录', group: '记录', def: true },
+    { id: 'notes', name: '备注', group: '记录', def: true },
+    { id: 'warmup', name: '热身组', group: '记录', def: true },
+    { id: 'undo', name: '撤销', group: '记录', def: true },
+    { id: 'duration', name: '训练时长', group: '记录', def: true },
+    { id: 'unilateral', name: '单侧左右', group: '记录', def: false },
+    { id: 'compareLast', name: '较上次', group: '对比', def: true },
+    { id: 'comparePrev', name: '较上上次', group: '对比', def: true },
+    { id: 'compareAvgN', name: '近 N 次平均', group: '对比', def: true },
+    { id: 'advancedMetrics', name: '高级指标展开', group: '对比', def: false },
+    { id: 'sameWeightReps', name: '同重量次数', group: '对比', def: true },
+    { id: 'trendSlope', name: '趋势斜率', group: '统计', def: false },
+    { id: 'volumeDensity', name: '容量密度', group: '统计', def: false },
+    { id: 'muscleVolume', name: '肌群周容量', group: '统计', def: false },
+    { id: 'periodCompare', name: '周期对比', group: '统计', def: false },
+    { id: 'bodyweight', name: '体重记录', group: '统计', def: false },
+    { id: 'pr', name: 'PR 检测', group: '教练', def: true },
+    { id: 'progressiveAdvice', name: '渐进超负荷建议', group: '教练', def: true },
+    { id: 'intraSetAdvice', name: '组间诊断', group: '教练', def: true },
+    { id: 'goals', name: '目标设定', group: '教练', def: true },
+    { id: 'summary', name: '训练总结页', group: '教练', def: true },
+    { id: 'history', name: '历史列表', group: '历史', def: true },
+    { id: 'exerciseDetail', name: '动作详情', group: '历史', def: true },
+    { id: 'calendar', name: '日历 / 周视图', group: '历史', def: true },
+    { id: 'prWall', name: 'PR 墙', group: '历史', def: false },
+    { id: 'warmupRamp', name: '热身阶梯', group: '工具', def: true },
+    { id: 'quickCopy', name: '快速复制上次', group: '工具', def: true },
+    { id: 'exerciseLibrary', name: '动作库管理', group: '工具', def: true },
+    { id: 'backupReminder', name: '备份提醒', group: '数据', def: true }
+  ];
+
+  const PRESETS = {
+    minimal: ['sessionRecord', 'autoRecover', 'autoSnapshot', 'exportImport', 'restTimer', 'wakeLock', 'warmup', 'compareLast'],
+    standard: FEATURES.filter(f => f.def).map(f => f.id),
+    full: FEATURES.map(f => f.id)
+  };
+
+  /* ---------- 工具 ---------- */
+  function uid(prefix) {
+    return (prefix || 'id') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function localDate(d) {
+    d = d || new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function nowIso() {
+    const d = new Date();
+    const off = -d.getTimezoneOffset();
+    const sign = off >= 0 ? '+' : '-';
+    const hh = pad(Math.floor(Math.abs(off) / 60));
+    const mm = pad(Math.abs(off) % 60);
+    return localDate(d) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + sign + hh + ':' + mm;
+  }
+  function parseDate(s) {
+    if (!s) return new Date();
+    const d = new Date(s.length <= 10 ? s + 'T00:00:00' : s);
+    return isNaN(d) ? new Date() : d;
+  }
+  function startOfWeek(date) {
+    const d = date ? new Date(date) : new Date();
+    d.setHours(0, 0, 0, 0);
+    const day = d.getDay(); // 0 Sun .. 6 Sat
+    const diff = day === 0 ? -6 : 1 - day; // 周一为一周开始
+    d.setDate(d.getDate() + diff);
+    return d;
+  }
+  function addDays(date, n) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + n);
+    return d;
+  }
+  function dayKey(date) {
+    const d = typeof date === 'string' ? parseDate(date) : date;
+    return DAYS[(d.getDay() + 6) % 7];
+  }
+  function round1(n) { return Math.round(n * 10) / 10; }
+  function round2(n) { return Math.round(n * 100) / 100; }
+  function pct(cur, base) {
+    if (!base || base <= 0) return null;
+    return round1(((cur - base) / base) * 100);
+  }
+  function mean(a) { return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
+  function median(a) {
+    if (!a.length) return 0;
+    const s = a.slice().sort((x, y) => x - y);
+    const m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  function sd(a) {
+    if (a.length < 2) return 0;
+    const m = mean(a);
+    return Math.sqrt(a.reduce((s, x) => s + (x - m) * (x - m), 0) / (a.length - 1));
+  }
+  function slope(values) {
+    const n = values.length;
+    if (n < 2) return 0;
+    const xs = values.map((_, i) => i);
+    const mx = mean(xs), my = mean(values);
+    let num = 0, den = 0;
+    for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (values[i] - my); den += (xs[i] - mx) * (xs[i] - mx); }
+    return den ? num / den : 0;
+  }
+  function floor25(w) { return Math.floor((w + 1e-9) / 2.5) * 2.5; }
+  function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+  /* ---------- 格式化 ---------- */
+  function fmtWeight(w) {
+    const n = round1(w);
+    return (Math.abs(n - Math.round(n)) < 1e-9 ? String(Math.round(n)) : n.toFixed(1)) + ' kg';
+  }
+  function fmtNum(w) {
+    const n = round1(w);
+    return Math.abs(n - Math.round(n)) < 1e-9 ? String(Math.round(n)) : n.toFixed(1);
+  }
+  function fmtVolume(v) {
+    return v >= 1000 ? (v / 1000).toFixed(2) + ' t' : round1(v) + ' kg';
+  }
+  function fmtPct(p) {
+    if (p == null) return '—';
+    return (p >= 0 ? '+' : '−') + Math.abs(p).toFixed(1) + '%';
+  }
+  function fmtDelta(n, unit) {
+    if (n == null) return '—';
+    const s = Math.abs(round1(n)) === Math.round(Math.abs(n)) ? String(Math.round(Math.abs(n))) : Math.abs(n).toFixed(1);
+    return (n >= 0 ? '+' : '−') + s + (unit || '');
+  }
+
+  /* ---------- 数据 ---------- */
+  function seedDB() {
+    const ex = (id, name, muscle, equipment, unilateral) => ({ id, name, muscle, equipment, unilateral: !!unilateral, custom: false });
+    return {
+      version: VERSION,
+      settings: {
+        unit: 'kg', theme: 'ocean', fontScale: 1, oneHand: true,
+        compareN: 4,
+        restTimer: { compound: 180, isolation: 90, autoStart: true, vibrate: true },
+        preset: 'standard',
+        features: {},
+        lastExportAt: null
+      },
+      exercises: [
+        ex('bench_bar', '杠铃卧推', 'chest', 'barbell'),
+        ex('incline_db', '哑铃上斜卧推', 'chest', 'dumbbell'),
+        ex('fly_cable', '绳索夹胸', 'chest', 'cable'),
+        ex('lateral_db', '哑铃侧平举', 'shoulders', 'dumbbell'),
+        ex('pushdown', '绳索下压', 'triceps', 'cable'),
+        ex('pullup', '引体向上', 'back', 'bodyweight'),
+        ex('row_bar', '杠铃划船', 'back', 'barbell'),
+        ex('pulldown', '高位下拉', 'back', 'cable'),
+        ex('facepull', '面拉', 'rear_delts', 'cable'),
+        ex('curl_db', '哑铃弯举', 'biceps', 'dumbbell'),
+        ex('squat_bar', '杠铃深蹲', 'quads', 'barbell'),
+        ex('rdl', '罗马尼亚硬拉', 'hamstrings', 'barbell'),
+        ex('legpress', '腿举', 'quads', 'machine'),
+        ex('legcurl', '腿弯举', 'hamstrings', 'machine'),
+        ex('calf', '提踵', 'calves', 'machine')
+      ],
+      weekPlan: { mon: null, tue: 'push', wed: 'pull', thu: 'legs', fri: null, sat: 'push', sun: 'pull' },
+      templates: {
+        push: [
+          { exerciseId: 'bench_bar', sets: 4, repMin: 6, repMax: 10, restSec: 180 },
+          { exerciseId: 'incline_db', sets: 3, repMin: 8, repMax: 12, restSec: 120 },
+          { exerciseId: 'fly_cable', sets: 3, repMin: 10, repMax: 15, restSec: 90 },
+          { exerciseId: 'lateral_db', sets: 4, repMin: 12, repMax: 20, restSec: 60 },
+          { exerciseId: 'pushdown', sets: 3, repMin: 10, repMax: 15, restSec: 90 }
+        ],
+        pull: [
+          { exerciseId: 'pullup', sets: 4, repMin: 6, repMax: 10, restSec: 180 },
+          { exerciseId: 'row_bar', sets: 4, repMin: 6, repMax: 10, restSec: 180 },
+          { exerciseId: 'pulldown', sets: 3, repMin: 8, repMax: 12, restSec: 120 },
+          { exerciseId: 'facepull', sets: 3, repMin: 12, repMax: 20, restSec: 60 },
+          { exerciseId: 'curl_db', sets: 3, repMin: 10, repMax: 15, restSec: 90 }
+        ],
+        legs: [
+          { exerciseId: 'squat_bar', sets: 4, repMin: 5, repMax: 8, restSec: 240 },
+          { exerciseId: 'rdl', sets: 3, repMin: 6, repMax: 10, restSec: 180 },
+          { exerciseId: 'legpress', sets: 3, repMin: 10, repMax: 15, restSec: 120 },
+          { exerciseId: 'legcurl', sets: 3, repMin: 10, repMax: 15, restSec: 90 },
+          { exerciseId: 'calf', sets: 4, repMin: 12, repMax: 20, restSec: 60 }
+        ]
+      },
+      goals: [],
+      bodyweights: [],
+      sessions: []
+    };
+  }
+
+  function migrate(data) {
+    if (!data || typeof data !== 'object') return seedDB();
+    if (!data.version) data.version = 1;
+    // 逐版本迁移占位：未来在此按 version 升级
+    data.settings = data.settings || {};
+    data.settings.restTimer = Object.assign({ compound: 180, isolation: 90, autoStart: true, vibrate: true }, data.settings.restTimer || {});
+    data.settings.features = data.settings.features || {};
+    data.settings.compareN = clamp(Number(data.settings.compareN) || 4, 2, 8);
+    data.exercises = Array.isArray(data.exercises) ? data.exercises : [];
+    data.templates = data.templates || {};
+    data.goals = Array.isArray(data.goals) ? data.goals : [];
+    data.bodyweights = Array.isArray(data.bodyweights) ? data.bodyweights : [];
+    data.sessions = Array.isArray(data.sessions) ? data.sessions : [];
+    data.weekPlan = data.weekPlan || { mon: null, tue: 'push', wed: 'pull', thu: 'legs', fri: null, sat: 'push', sun: 'pull' };
+    return data;
+  }
+
+  function isOn(db, id) {
+    const f = FEATURES.find(x => x.id === id);
+    if (!f) return false;
+    if (f.locked) return true;
+    const v = db.settings.features[id];
+    return v == null ? f.def : !!v;
+  }
+
+  function applyPreset(db, name) {
+    const list = PRESETS[name] || PRESETS.standard;
+    const map = {};
+    FEATURES.forEach(f => { map[f.id] = list.indexOf(f.id) >= 0; });
+    FEATURES.filter(f => f.locked).forEach(f => { map[f.id] = true; });
+    db.settings.features = map;
+    db.settings.preset = name;
+    return db;
+  }
+
+  function getExercise(db, id) { return db.exercises.find(e => e.id === id) || { id, name: id, muscle: 'other', equipment: 'other' }; }
+
+  function validateImport(obj) {
+    if (!obj || typeof obj !== 'object') return '文件内容不是对象';
+    const data = obj.data || obj;
+    if (!data || !Array.isArray(data.sessions)) return '缺少 sessions 数组';
+    if (data.version && Number(data.version) > VERSION) return '数据版本高于当前应用';
+    return null;
+  }
+
+  function mergeImport(db, obj) {
+    const data = obj.data || obj;
+    const have = new Set(db.sessions.map(s => s.id));
+    let added = 0;
+    (data.sessions || []).forEach(s => { if (s && s.id && !have.has(s.id)) { db.sessions.push(s); added++; } });
+    const exHave = new Set(db.exercises.map(e => e.id));
+    (data.exercises || []).forEach(e => { if (e && e.id && !exHave.has(e.id)) db.exercises.push(e); });
+    db.sessions.sort((a, b) => (a.startedAt || '').localeCompare(b.startedAt || ''));
+    return added;
+  }
+
+  /* ---------- 训练 ---------- */
+  function startSession(db, dayType, opts) {
+    opts = opts || {};
+    const s = {
+      id: localDate() + '-' + dayType + '-' + Date.now().toString(36),
+      date: localDate(),
+      dayType,
+      status: 'in_progress',
+      startedAt: nowIso(),
+      endedAt: null,
+      note: '',
+      entries: []
+    };
+    let source = null;
+    if (opts.copyLast) {
+      const last = db.sessions
+        .filter(x => x.status === 'finished' && x.dayType === dayType)
+        .sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || ''))[0];
+      if (last) source = last.entries;
+    }
+    if (source) {
+      source.forEach(e => s.entries.push(cloneEntry(e)));
+    } else {
+      (db.templates[dayType] || []).forEach(t => s.entries.push(makeEntry(db, t.exerciseId, t)));
+    }
+    db.sessions.push(s);
+    return s;
+  }
+
+  function cloneEntry(e) {
+    return {
+      exerciseId: e.exerciseId,
+      note: '',
+      planned: e.planned ? Object.assign({}, e.planned) : null,
+      sets: (e.sets || []).map(x => ({ w: x.w, r: x.r, type: x.type, side: x.side || null, rpe: null, done: false })),
+      advice: []
+    };
+  }
+
+  function makeEntry(db, exerciseId, t) {
+    return {
+      exerciseId,
+      note: '',
+      planned: t ? { sets: t.sets, repMin: t.repMin, repMax: t.repMax, restSec: t.restSec } : { sets: 3, repMin: 8, repMax: 12, restSec: 90 },
+      sets: [],
+      advice: []
+    };
+  }
+
+  function prefillFromLast(db, entry) {
+    const h = historyFor(db, entry.exerciseId, null);
+    if (!h.length) return;
+    const last = h[0];
+    const ws = workingSets(last.entry);
+    if (!ws.length) return;
+    entry.sets = ws.map(s => ({ w: s.w, r: s.r, type: 'work', side: s.side || null, rpe: null, done: false }));
+  }
+
+  function workingSets(entry) {
+    return (entry.sets || []).filter(s => s.done !== false && s.type === 'work');
+  }
+  function hasWorking(entry) { return workingSets(entry).length > 0; }
+
+  function addSet(entry, opts) {
+    opts = opts || {};
+    const ws = workingSets(entry);
+    const last = ws.length ? ws[ws.length - 1] : null;
+    const set = {
+      w: opts.w != null ? opts.w : (last ? last.w : 20),
+      r: opts.r != null ? opts.r : (entry.planned && entry.planned.repMin ? entry.planned.repMin : 8),
+      type: opts.type || 'work',
+      side: null,
+      rpe: null,
+      done: false
+    };
+    entry.sets.push(set);
+    return set;
+  }
+
+  function finishSession(session) {
+    session.status = 'finished';
+    session.endedAt = nowIso();
+    session.entries.forEach(e => { e.sets = e.sets.filter(s => s.done !== false); });
+  }
+
+  function sessionDurationMin(session) {
+    if (!session.startedAt) return 0;
+    const end = session.endedAt ? parseDate(session.endedAt) : new Date();
+    return Math.max(0, (end - parseDate(session.startedAt)) / 60000);
+  }
+
+  /* ---------- 指标 ---------- */
+  function e1rmRaw(w, r) {
+    if (!(r >= 1)) return null;
+    return round1(w * (1 + Math.min(r, 30) / 30));
+  }
+  function e1rm(w, r) {
+    if (!(r >= 1 && r <= 12)) return null;
+    return e1rmRaw(w, r);
+  }
+
+  function fatigueDrop(entry) {
+    const ws = workingSets(entry);
+    const groups = {};
+    ws.forEach(s => { const k = String(s.w); (groups[k] = groups[k] || []).push(s); });
+    let best = null;
+    Object.keys(groups).forEach(k => {
+      const g = groups[k];
+      if (g.length >= 3) {
+        const max = Math.max.apply(null, g.map(s => s.r));
+        const last = g[g.length - 1].r;
+        const v = max ? (max - last) / max : 0;
+        if (!best || g.length > best.n) best = { n: g.length, v };
+      }
+    });
+    return best ? best.v : null;
+  }
+
+  function repCV(entry) {
+    const ws = workingSets(entry);
+    const groups = {};
+    ws.forEach(s => { const k = String(s.w); (groups[k] = groups[k] || []).push(s); });
+    let best = null;
+    Object.keys(groups).forEach(k => {
+      const g = groups[k];
+      if (g.length >= 2) {
+        const m = mean(g.map(s => s.r));
+        const v = m ? sd(g.map(s => s.r)) / m : 0;
+        if (!best || g.length > best.n) best = { n: g.length, v };
+      }
+    });
+    return best ? best.v : null;
+  }
+
+  function entryMetrics(entry) {
+    const ws = workingSets(entry);
+    const volume = ws.reduce((a, s) => a + s.w * s.r, 0);
+    const reps = ws.reduce((a, s) => a + s.r, 0);
+    const sets = ws.length;
+    const bestSet = ws.length ? Math.max.apply(null, ws.map(s => s.w * s.r)) : 0;
+    const e1 = ws.filter(s => s.r <= 12).map(s => e1rmRaw(s.w, s.r)).filter(v => v != null);
+    const e1ref = ws.filter(s => s.r > 12).map(s => e1rmRaw(s.w, s.r)).filter(v => v != null);
+    return {
+      volume: round1(volume),
+      reps,
+      sets,
+      avgSet: sets ? round1(volume / sets) : 0,
+      avgWeight: reps ? round1(volume / reps) : 0,
+      maxW: ws.length ? Math.max.apply(null, ws.map(s => s.w)) : 0,
+      bestSet: round1(bestSet),
+      e1rm: e1.length ? Math.max.apply(null, e1) : null,
+      e1rmRef: e1ref.length ? Math.max.apply(null, e1ref) : null,
+      drop: fatigueDrop(entry),
+      cv: repCV(entry),
+      completion: entry.planned && entry.planned.sets ? round1(sets / entry.planned.sets * 100) : null
+    };
+  }
+
+  function sideMetrics(entry) {
+    const ws = workingSets(entry);
+    const out = {};
+    ['L', 'R'].forEach(side => {
+      const sets = ws.filter(s => s.side === side);
+      if (!sets.length) return;
+      const volume = sets.reduce((a, s) => a + s.w * s.r, 0);
+      const reps = sets.reduce((a, s) => a + s.r, 0);
+      const e1 = sets.filter(s => s.r <= 12).map(s => e1rm(s.w, s.r)).filter(v => v != null);
+      out[side] = {
+        sets: sets.length,
+        reps,
+        volume: round1(volume),
+        maxW: Math.max.apply(null, sets.map(s => s.w)),
+        e1rm: e1.length ? Math.max.apply(null, e1) : null
+      };
+    });
+    return out;
+  }
+
+  function historyFor(db, exerciseId, excludeSessionId) {
+    return db.sessions
+      .filter(s => s.status === 'finished' && s.id !== excludeSessionId)
+      .map(s => {
+        const e = s.entries.find(x => x.exerciseId === exerciseId);
+        return e && hasWorking(e) ? { session: s, entry: e, m: entryMetrics(e) } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => (b.session.startedAt || '').localeCompare(a.session.startedAt || ''));
+  }
+
+  function diff(cur, base) {
+    const keys = ['volume', 'reps', 'sets', 'avgSet', 'avgWeight', 'maxW', 'bestSet', 'e1rm'];
+    const out = {};
+    keys.forEach(k => {
+      const c = cur[k], b = base[k];
+      if (c == null || b == null) { out[k] = null; return; }
+      out[k] = { abs: round1(c - b), pct: pct(c, b) };
+    });
+    return out;
+  }
+
+  function avgMetrics(list) {
+    if (!list.length) return null;
+    const keys = ['volume', 'reps', 'sets', 'avgSet', 'avgWeight', 'maxW', 'bestSet', 'e1rm'];
+    const out = {};
+    keys.forEach(k => {
+      const vals = list.map(x => x.m[k]).filter(v => v != null);
+      out[k] = vals.length ? round1(mean(vals)) : null;
+    });
+    return out;
+  }
+
+  function trimmedEntry(entry, n) {
+    const ws = workingSets(entry).slice(0, n).map(s => Object.assign({}, s, { done: true }));
+    return Object.assign({}, entry, { sets: ws });
+  }
+
+  function compareEntry(db, session, entry) {
+    const cur = entryMetrics(entry);
+    const h = historyFor(db, entry.exerciseId, session.id);
+    const n = clamp(Number(db.settings.compareN) || 4, 2, 8);
+    const slice = h.slice(0, n);
+    const curN = cur.sets;
+
+    function baseOf(item) {
+      if (curN > 0 && curN < item.m.sets) {
+        return { m: entryMetrics(trimmedEntry(item.entry, curN)), trimmed: true };
+      }
+      return { m: item.m, trimmed: false };
+    }
+
+    const lastB = h[0] ? baseOf(h[0]) : null;
+    const prevB = h[1] ? baseOf(h[1]) : null;
+    let avgN = null;
+    if (slice.length) {
+      const ms = slice.map(x => baseOf(x).m);
+      const avg = avgMetrics(ms.map(m => ({ m })));
+      avgN = { n: slice.length, m: avg, d: diff(cur, avg) };
+    }
+    return {
+      cur,
+      curN,
+      lastSets: h[0] ? h[0].m.sets : 0,
+      trimmed: !!(lastB && lastB.trimmed) || !!(prevB && prevB.trimmed),
+      last: h[0] ? { date: h[0].session.date, m: lastB.m, d: diff(cur, lastB.m), trimmed: lastB.trimmed } : null,
+      prev: h[1] ? { date: h[1].session.date, m: prevB.m, d: diff(cur, prevB.m), trimmed: prevB.trimmed } : null,
+      avgN,
+      history: h
+    };
+  }
+
+  function prStatus(db, session, entry) {
+    const cur = entryMetrics(entry);
+    const h = historyFor(db, entry.exerciseId, session.id);
+    if (!h.length) return null;
+    const max = {
+      volume: Math.max.apply(null, h.map(x => x.m.volume || 0)),
+      reps: Math.max.apply(null, h.map(x => x.m.reps || 0)),
+      maxW: Math.max.apply(null, h.map(x => x.m.maxW || 0)),
+      e1rm: Math.max.apply(null, h.map(x => x.m.e1rm == null ? 0 : x.m.e1rm))
+    };
+    const out = {};
+    if (cur.volume > max.volume) out.volume = cur.volume - max.volume;
+    if (cur.reps > max.reps) out.reps = cur.reps - max.reps;
+    if (cur.maxW > max.maxW) out.maxW = cur.maxW - max.maxW;
+    if (cur.e1rm != null && cur.e1rm > max.e1rm) out.e1rm = round1(cur.e1rm - max.e1rm);
+    return Object.keys(out).length ? out : null;
+  }
+
+  function sameWeightReps(db, session, entry) {
+    const h = historyFor(db, entry.exerciseId, session.id);
+    if (!h.length) return null;
+    const curWs = workingSets(entry);
+    const baseWs = workingSets(h[0].entry);
+    const curMap = {}, baseMap = {};
+    curWs.forEach(s => { curMap[s.w] = (curMap[s.w] || 0) + s.r; });
+    baseWs.forEach(s => { baseMap[s.w] = (baseMap[s.w] || 0) + s.r; });
+    const common = Object.keys(curMap).map(Number).filter(w => baseMap[w] != null);
+    if (!common.length) return null;
+    const w = Math.max.apply(null, common);
+    return { weight: w, cur: curMap[w], base: baseMap[w], delta: curMap[w] - baseMap[w], date: h[0].session.date };
+  }
+
+  function trendSlope(db, exerciseId, metric, n) {
+    const h = historyFor(db, exerciseId, null).slice(0, n || 6).reverse();
+    if (h.length < 3) return null;
+    const vals = h.map(x => x.m[metric]).filter(v => v != null);
+    if (vals.length < 3) return null;
+    return round1(slope(vals));
+  }
+
+  /* ---------- 组间诊断 ---------- */
+  function diagnose(entry, history) {
+    const ws = workingSets(entry);
+    if (ws.length < 2) return null;
+    const cur = ws[ws.length - 1];
+    const prev = ws[ws.length - 2];
+    if (cur.w !== prev.w) return null;
+    if (prev.rpe != null && prev.rpe >= 9.5) return null;
+    const drop = prev.r > 0 ? (prev.r - cur.r) / prev.r : 0;
+    if (drop <= 0) return null;
+
+    const baseDrops = [];
+    history.forEach(h => {
+      const sets = workingSets(h.entry).filter(s => Math.abs(s.w - cur.w) <= 2.5);
+      for (let i = 1; i < sets.length; i++) {
+        if (sets[i].w === sets[i - 1].w && sets[i - 1].r > 0) {
+          baseDrops.push((sets[i - 1].r - sets[i].r) / sets[i - 1].r);
+        }
+      }
+    });
+    const threshold = baseDrops.length >= 3 ? Math.max(0.25, median(baseDrops) + 0.15) : 0.30;
+    const planned = entry.planned || {};
+    const firstR = ws[0].r;
+    const belowTarget = planned.repMin ? cur.r < planned.repMin : false;
+    const bigDrop = cur.r < 0.6 * firstR;
+    if (drop < threshold || (!belowTarget && !bigDrop)) return null;
+
+    const shown = (entry.advice || []).filter(a => a.kind && a.kind !== 'ignored');
+    if (shown.length >= 2) return null;
+    if ((entry.advice || []).some(a => a.accepted === false)) return null;
+
+    const rest = prev.rest || null;
+    const base = {
+      setIndex: ws.length, drop: round1(drop * 100), threshold: round1(threshold * 100),
+      prevR: prev.r, curR: cur.r, weight: cur.w, date: null
+    };
+
+    if (rest && rest.planned && rest.actual != null && rest.actual < rest.planned * 0.8) {
+      return Object.assign(base, {
+        kind: 'rest',
+        text: '实际休息 ' + Math.round(rest.actual) + ' 秒，建议补足到 ' + Math.round(rest.planned) + ' 秒',
+        restTo: Math.round(rest.planned)
+      });
+    }
+    if (planned.repMin) {
+      const e = e1rm(cur.w, cur.r);
+      if (e) {
+        const target = planned.repMin;
+        let w = floor25(e / (1 + target / 30));
+        if (w <= cur.w - 2.5) {
+          return Object.assign(base, {
+            kind: 'weight',
+            text: '建议降至 ' + fmtNum(w) + '–' + fmtNum(w + 2.5) + ' kg（目标 ' + target + ' 次）',
+            weightRange: [w, w + 2.5], target
+          });
+        }
+      }
+    }
+    if (shown.length >= 1) {
+      return Object.assign(base, { kind: 'end', text: '连续掉次数，建议结束该动作或改递减组' });
+    }
+    return Object.assign(base, { kind: 'reps', text: '保持重量，本组做 ' + (cur.r + 1) + '–' + (cur.r + 2) + ' 次即算完成' });
+  }
+
+  function progressiveAdvice(db, exerciseId) {
+    const h = historyFor(db, exerciseId, null);
+    if (!h.length) return null;
+    const last = h[0];
+    const ws = workingSets(last.entry);
+    if (!ws.length) return null;
+    const planned = last.entry.planned || {};
+    if (planned.repMax) {
+      const allTop = ws.every(s => s.r >= planned.repMax);
+      const noFail = ws.every(s => s.rpe == null || s.rpe < 9.5);
+      if (allTop && noFail) return { type: 'up', text: '上次全部达到 ' + planned.repMax + ' 次，下次可尝试 +2.5kg' };
+    }
+    if (planned.repMin && h.length >= 2) {
+      const prevWs = workingSets(h[1].entry);
+      const low = e => e.filter(s => s.r < planned.repMin).length > e.length / 2;
+      if (low(ws) && low(prevWs)) return { type: 'down', text: '连续两次多数组低于 ' + planned.repMin + ' 次，建议 −2.5kg 或维持' };
+    }
+    if (!planned.repMax) {
+      const e = last.m.e1rm;
+      if (e) return { type: 'up', text: '上次最佳 e1RM ' + e.toFixed(1) + 'kg，状态好可尝试 +2.5kg' };
+    }
+    return null;
+  }
+
+  function warmupRamp(workWeight) {
+    const pcts = [0.4, 0.6, 0.8];
+    return pcts.map(p => ({ pct: p, w: Math.max(2.5, floor25(workWeight * p)), r: 5 }));
+  }
+
+  /* ---------- 统计 ---------- */
+  function sessionsInRange(db, from, to) {
+    return db.sessions.filter(s => s.status === 'finished' && s.date >= from && s.date <= to);
+  }
+
+  function weekStats(db, date) {
+    const start = startOfWeek(date);
+    const days = [];
+    let totalVolume = 0, done = 0, rest = 0, missed = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(start, i);
+      const ds = localDate(d);
+      const key = DAYS[i];
+      const plan = db.weekPlan[key];
+      const sess = db.sessions.filter(s => s.date === ds && s.status === 'finished');
+      const vol = sess.reduce((a, s) => a + s.entries.reduce((b, e) => b + entryMetrics(e).volume, 0), 0);
+      totalVolume += vol;
+      let status = 'future';
+      if (sess.length) { status = 'done'; done++; }
+      else if (!plan) { status = 'rest'; rest++; }
+      else if (ds < localDate()) { status = 'missed'; missed++; }
+      else if (ds === localDate()) { status = 'today'; }
+      days.push({ date: ds, key, plan, status, volume: round1(vol), sessions: sess });
+    }
+    return { start: localDate(start), days, totalVolume: round1(totalVolume), done, rest, missed };
+  }
+
+  function muscleVolume(db, date) {
+    const start = startOfWeek(date);
+    const from = localDate(start), to = localDate(addDays(start, 6));
+    const map = {};
+    sessionsInRange(db, from, to).forEach(s => {
+      s.entries.forEach(e => {
+        const ex = getExercise(db, e.exerciseId);
+        const m = ex.muscle || 'other';
+        map[m] = (map[m] || 0) + entryMetrics(e).volume;
+      });
+    });
+    return Object.keys(map).map(k => ({ muscle: k, volume: round1(map[k]) })).sort((a, b) => b.volume - a.volume);
+  }
+
+  function periodCompare(db, date) {
+    const start = startOfWeek(date);
+    const thisFrom = localDate(start), thisTo = localDate(addDays(start, 6));
+    const prevStart = addDays(start, -28);
+    const prevFrom = localDate(prevStart), prevTo = localDate(addDays(prevStart, 6));
+    const sum = (from, to) => sessionsInRange(db, from, to).reduce((a, s) => a + s.entries.reduce((b, e) => b + entryMetrics(e).volume, 0), 0);
+    const cur = round1(sum(thisFrom, thisTo));
+    const prev = round1(sum(prevFrom, prevTo));
+    return { cur, prev, abs: round1(cur - prev), pct: pct(cur, prev) };
+  }
+
+  function prWall(db) {
+    const byEx = {};
+    db.sessions.filter(s => s.status === 'finished').forEach(s => {
+      s.entries.forEach(e => {
+        const m = entryMetrics(e);
+        if (!m.sets) return;
+        const ex = getExercise(db, e.exerciseId);
+        const cur = byEx[e.exerciseId] || { id: e.exerciseId, name: ex.name, volume: 0, e1rm: 0, maxW: 0, date: s.date };
+        if (m.volume > cur.volume) { cur.volume = m.volume; cur.date = s.date; }
+        if (m.e1rm != null && m.e1rm > cur.e1rm) cur.e1rm = m.e1rm;
+        if (m.maxW > cur.maxW) cur.maxW = m.maxW;
+        byEx[e.exerciseId] = cur;
+      });
+    });
+    return Object.values(byEx).sort((a, b) => b.volume - a.volume);
+  }
+
+  function bestSetOf(entry) {
+    const ws = workingSets(entry);
+    if (!ws.length) return null;
+    return ws.reduce((a, s) => (s.w * s.r > a.w * a.r ? s : a), ws[0]);
+  }
+
+  function findPrsForSession(db, session) {
+    const out = [];
+    session.entries.forEach(e => {
+      const p = prStatus(db, session, e);
+      if (p) out.push({ exerciseId: e.exerciseId, name: getExercise(db, e.exerciseId).name, pr: p });
+    });
+    return out;
+  }
+
+  return {
+    VERSION, DAYS, DAY_CN, DAY_TYPE_CN, MUSCLE_CN, FEATURES, PRESETS,
+    uid, localDate, nowIso, parseDate, startOfWeek, addDays, dayKey,
+    round1, round2, pct, mean, median, sd, slope, floor25, clamp,
+    fmtWeight, fmtNum, fmtVolume, fmtPct, fmtDelta,
+    seedDB, migrate, isOn, applyPreset, getExercise, validateImport, mergeImport,
+    startSession, makeEntry, cloneEntry, prefillFromLast, workingSets, hasWorking, addSet, finishSession, sessionDurationMin,
+    e1rm, e1rmRaw, entryMetrics, sideMetrics, historyFor, compareEntry, prStatus, sameWeightReps, trendSlope,
+    diagnose, progressiveAdvice, warmupRamp,
+    sessionsInRange, weekStats, muscleVolume, periodCompare, prWall, bestSetOf, findPrsForSession
+  };
+});
+
+</script>
+  <script>
+/* 健身记录 PWA · 界面与交互 */
+(function () {
+  'use strict';
+  const C = window.FitCore;
+  if (!C) { document.body.innerHTML = '<p style="padding:20px">核心脚本加载失败</p>'; return; }
+
+  const KEY = 'fitlog.v1';
+  const SNAP = 'fitlog.snapshot.';
+  const TIMER_KEY = 'fitlog.timer';
+  const MAX_SNAP = 7;
+
+  const EQUIP_CN = { barbell: '杠铃', dumbbell: '哑铃', cable: '绳索', machine: '器械', bodyweight: '自重', other: '其他' };
+  const ICONS = {
+    train: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6.5 8v8M3.5 9.5v5M17.5 8v8M20.5 9.5v5M6.5 12h11"/></svg>',
+    history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v4.8l3.2 2"/></svg>',
+    stats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19V5M4 19h16M7.5 15.5l3-4.5 3 2.2 4-6"/></svg>',
+    settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3.2v2M12 18.8v2M3.2 12h2M18.8 12h2M5.8 5.8l1.4 1.4M16.8 16.8l1.4 1.4M18.2 5.8l-1.4 1.4M7.2 16.8l-1.4 1.4"/></svg>'
+  };
+  function icon(name) { return ICONS[name] || ''; }
+
+  let DB = null;
+  let wakeLock = null;
+  let pressTimer = null;
+  let toastTimer = null;
+  let tick = null;
+  let undoSave = null;
+
+  const ui = {
+    screen: 'home',
+    sessionId: null,
+    detailId: null,
+    weekOffset: 0,
+    picker: false,
+    timer: null,
+    fine: false,
+    statsEx: null,
+    tplDay: 'push',
+    exId: null,
+    exEdit: null,
+    modal: null,
+    toast: null
+  };
+
+  /* ---------- 存储 ---------- */
+  function load() {
+    let raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) {}
+    if (raw) {
+      try { DB = C.migrate(JSON.parse(raw)); return; }
+      catch (e) { console.warn('主数据损坏，尝试快照', e); }
+    }
+    try {
+      const keys = Object.keys(localStorage).filter(k => k.indexOf(SNAP) === 0).sort().reverse();
+      for (const k of keys) {
+        try { DB = C.migrate(JSON.parse(localStorage.getItem(k))); toast('已从备份快照恢复'); return; } catch (e) {}
+      }
+    } catch (e) {}
+    DB = C.seedDB();
+    save();
+  }
+
+  function save() {
+    try {
+      const raw = JSON.stringify(DB);
+      localStorage.setItem(KEY + '.tmp', raw);
+      JSON.parse(localStorage.getItem(KEY + '.tmp'));
+      localStorage.setItem(KEY, raw);
+      localStorage.removeItem(KEY + '.tmp');
+    } catch (e) {
+      toast('保存失败：' + e.message, true);
+    }
+  }
+
+  function snapshot() {
+    if (!DB || !C.isOn(DB, 'autoSnapshot')) return;
+    try {
+      const k = SNAP + C.localDate();
+      if (!localStorage.getItem(k)) localStorage.setItem(k, JSON.stringify(DB));
+      const keys = Object.keys(localStorage).filter(x => x.indexOf(SNAP) === 0).sort();
+      while (keys.length > MAX_SNAP) localStorage.removeItem(keys.shift());
+    } catch (e) {}
+  }
+
+  function saveTimer() {
+    try {
+      if (ui.timer) localStorage.setItem(TIMER_KEY, JSON.stringify(ui.timer));
+      else localStorage.removeItem(TIMER_KEY);
+    } catch (e) {}
+  }
+
+  function loadTimer() {
+    try {
+      const raw = localStorage.getItem(TIMER_KEY);
+      if (!raw) return;
+      const t = JSON.parse(raw);
+      const s = DB.sessions.find(x => x.status === 'in_progress');
+      if (!s) { localStorage.removeItem(TIMER_KEY); return; }
+      const e = s.entries.find(x => x.exerciseId === t.entryId);
+      if (!e || !e.sets[t.setIndex]) { localStorage.removeItem(TIMER_KEY); return; }
+      ui.timer = t;
+      if (Date.now() >= t.endAt) t.over = true;
+    } catch (e) {}
+  }
+
+  /* ---------- 工具 ---------- */
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function isOn(id) { return C.isOn(DB, id); }
+  function activeSession() { return DB.sessions.find(s => s.status === 'in_progress') || null; }
+  function currentSession() { return DB.sessions.find(s => s.id === ui.sessionId) || activeSession(); }
+  function todayType() { return DB.weekPlan[C.dayKey(new Date())]; }
+  function lastFor(dayType) {
+    return DB.sessions.filter(s => s.status === 'finished' && s.dayType === dayType)
+      .sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || ''))[0] || null;
+  }
+  function toast(msg, err, undo) {
+    ui.toast = { msg, err: !!err, undo: !!undo };
+    renderToast();
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { ui.toast = null; renderToast(); }, undo ? 6000 : 2600);
+  }
+  function renderToast() {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    if (!ui.toast) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div class="toast ' + (ui.toast.err ? 'err' : '') + '">' + esc(ui.toast.msg) +
+      (ui.toast.undo ? '<button class="undo" data-act="undo">撤销</button>' : '') + '</div>';
+  }
+  function pushUndo() { try { undoSave = JSON.stringify(DB); } catch (e) {} }
+  function vibrate(ms) { try { if (navigator.vibrate) navigator.vibrate(ms || 20); } catch (e) {} }
+
+  async function acquireWake() {
+    if (!isOn('wakeLock') || !('wakeLock' in navigator)) return;
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  }
+  function releaseWake() {
+    if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+  }
+
+  function themeOf() {
+    const t = DB.settings.theme;
+    if (t === 'light' || t === 'graphite' || t === 'ocean') return t;
+    return t === 'dark' ? 'graphite' : 'ocean';
+  }
+
+  function applyTheme() {
+    const t = themeOf();
+    document.body.classList.toggle('theme-ocean', t === 'ocean');
+    document.body.classList.toggle('theme-light', t === 'light');
+    document.body.classList.toggle('theme-graphite', t === 'graphite');
+    document.body.style.setProperty('--font-scale', DB.settings.fontScale || 1);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', t === 'light' ? '#f5f7fa' : t === 'ocean' ? '#071216' : '#0e1116');
+  }
+
+  /* ---------- 计时器 ---------- */
+  function restDefault(entry) {
+    const ex = C.getExercise(DB, entry.exerciseId);
+    const t = entry.planned && entry.planned.restSec;
+    if (t) return t;
+    const compound = ['barbell', 'machine', 'bodyweight'].indexOf(ex.equipment) >= 0;
+    return compound ? DB.settings.restTimer.compound : DB.settings.restTimer.isolation;
+  }
+
+  function startRest(entry, index) {
+    if (!isOn('restTimer')) return;
+    if (ui.timer) recordRest();
+    const planned = restDefault(entry);
+    ui.timer = { startAt: Date.now(), endAt: Date.now() + planned * 1000, planned, entryId: entry.exerciseId, setIndex: index, adjusts: [], over: false };
+    saveTimer();
+  }
+
+  function recordRest() {
+    const t = ui.timer;
+    if (!t) return;
+    const s = currentSession();
+    const e = s && s.entries.find(x => x.exerciseId === t.entryId);
+    const st = e && e.sets[t.setIndex];
+    if (st && st.done) {
+      st.rest = { planned: t.planned, actual: Math.round((Date.now() - t.startAt) / 1000), adjusts: t.adjusts.slice() };
+      save();
+    }
+    ui.timer = null;
+    saveTimer();
+  }
+
+  function timerRemain() {
+    if (!ui.timer) return 0;
+    return Math.max(0, Math.ceil((ui.timer.endAt - Date.now()) / 1000));
+  }
+  function fmtClock(sec) {
+    sec = Math.max(0, Math.round(sec));
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function renderTimer() {
+    const el = document.getElementById('timerbar');
+    if (!el) return;
+    document.body.classList.toggle('has-timer', !!ui.timer);
+    if (!ui.timer) { el.innerHTML = ''; return; }
+    const left = timerRemain();
+    const over = left <= 0;
+    const text = over ? '+' + fmtClock((Date.now() - ui.timer.endAt) / 1000) : fmtClock(left);
+    el.innerHTML = '<div class="timerbar-inner">' +
+      '<div><div class="lbl">' + (over ? '已超时，可继续休息' : '组间休息') + '</div>' +
+      '<div class="time ' + (over ? 'over' : '') + '" id="timerTime">' + text + '</div></div>' +
+      '<div class="row grow" style="justify-content:flex-end;gap:6px">' +
+      '<button class="btn btn-sm" data-act="timer-minus">−30</button>' +
+      '<button class="btn btn-sm" data-act="timer-plus">+30</button>' +
+      '<button class="btn btn-sm" data-act="timer-plus60">+60</button>' +
+      '<button class="btn btn-primary btn-sm" data-act="timer-stop">结束休息</button>' +
+      '</div></div>';
+  }
+
+  function tickFn() {
+    if (ui.timer && !ui.timer.over) {
+      const left = (ui.timer.endAt - Date.now()) / 1000;
+      if (left <= 0) {
+        ui.timer.over = true;
+        vibrate([80, 60, 80]);
+        saveTimer();
+      }
+    }
+    if (ui.timer) {
+      const t = document.getElementById('timerTime');
+      if (t) {
+        const left = timerRemain();
+        const over = left <= 0;
+        t.textContent = over ? '+' + fmtClock((Date.now() - ui.timer.endAt) / 1000) : fmtClock(left);
+        t.className = 'time' + (over ? ' over' : '');
+      }
+    }
+    const e = document.getElementById('elapsed');
+    if (e && currentSession()) e.textContent = fmtClock(C.sessionDurationMin(currentSession()) * 60);
+  }
+
+  /* ---------- 渲染 ---------- */
+  function render() {
+    applyTheme();
+    let html = '';
+    if (ui.screen === 'home') html = viewHome();
+    else if (ui.screen === 'session') html = viewSession();
+    else if (ui.screen === 'history') html = viewHistory();
+    else if (ui.screen === 'stats') html = viewStats();
+    else if (ui.screen === 'settings') html = viewSettings();
+    else if (ui.screen === 'template') html = viewTemplate();
+    else if (ui.screen === 'exercise') html = viewExercise();
+    else if (ui.screen === 'summary') html = viewSummary(ui.detailId);
+    const nav = ['home', 'history', 'stats', 'settings'].indexOf(ui.screen) >= 0 ? viewNav() : '';
+    document.body.classList.toggle('has-nav', !!nav);
+    document.getElementById('app').innerHTML = html + nav + (ui.picker ? viewPicker() : '') + (ui.modal ? viewModal() : '') + (ui.exEdit ? viewExerciseEditor() : '');
+    renderTimer();
+    renderToast();
+  }
+
+  function viewNav() {
+    const items = [['home', '训练', 'train'], ['history', '历史', 'history'], ['stats', '统计', 'stats'], ['settings', '设置', 'settings']];
+    return '<nav class="nav"><div class="nav-inner">' + items.map(x =>
+      '<button data-act="nav-' + x[0] + '" class="' + (ui.screen === x[0] ? 'active' : '') + '">' +
+      '<span class="ico">' + icon(x[2]) + '</span><span>' + x[1] + '</span></button>').join('') + '</div></nav>';
+  }
+
+  function viewHome() {
+    const type = todayType();
+    const active = activeSession();
+    const ws = C.weekStats(DB, new Date());
+    const recent = DB.sessions.filter(s => s.status === 'finished').sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || '')).slice(0, 4);
+    const last = type ? lastFor(type) : null;
+    let html = '<div class="topbar"><div class="grow"><div class="title">' + C.DAY_CN[C.dayKey(new Date())] + ' · ' + C.localDate() + '</div>' +
+      '<div class="sub">' + (type ? C.DAY_TYPE_CN[type] : '休息日') + '</div></div></div>';
+    html += '<div class="screen">';
+    if (active) {
+      html += '<div class="card" style="border-color:var(--accent)"><div class="row between"><div><div class="t" style="font-weight:650">有未完成的训练</div>' +
+        '<div class="s muted small">' + C.DAY_TYPE_CN[active.dayType] + ' · 已进行 ' + fmtClock(C.sessionDurationMin(active) * 60) + '</div></div>' +
+        '<button class="btn btn-primary btn-sm" data-act="resume">继续</button></div></div>';
+    }
+    html += '<div class="card"><h1>' + (type ? '今天练' + C.DAY_TYPE_CN[type] : '今天休息') + '</h1>' +
+      '<div class="muted small" style="margin:6px 0 12px">' + (type ? '模板：' + (DB.templates[type] || []).length + ' 个动作' : '按计划休息，或临时练一场') + '</div>' +
+      (type ? '<button class="btn btn-primary btn-block btn-big" data-act="start" data-type="' + type + '">开始' + C.DAY_TYPE_CN[type] + '</button>' : '') +
+      '<div class="row" style="margin-top:8px">' +
+      ['push', 'pull', 'legs'].map(t => '<button class="btn btn-sm grow" data-act="start" data-type="' + t + '">' + C.DAY_TYPE_CN[t] + '</button>').join('') +
+      '</div>' +
+      (isOn('quickCopy') && last ? '<button class="btn btn-ghost btn-block" style="margin-top:8px" data-act="start-copy" data-type="' + type + '">像上次一样开始</button>' : '') +
+      '</div>';
+    if (isOn('calendar')) html += cardWeek(ws);
+    if (isOn('backupReminder') && DB.sessions.length) {
+      const lastEx = DB.settings.lastExportAt ? new Date(DB.settings.lastExportAt) : null;
+      const days = lastEx ? (Date.now() - lastEx.getTime()) / 86400000 : 0;
+      if (!lastEx) html += '<div class="banner">还没有导出过备份，建议去设置里导出一次。</div>';
+      else if (days > 7) html += '<div class="banner">已经 ' + Math.floor(days) + ' 天没有导出备份了，建议去设置里导出一次。</div>';
+    }
+    if (recent.length) {
+      html += '<div class="section-title">最近训练</div><div class="card">' + recent.map(s => {
+        const vol = s.entries.reduce((a, e) => a + C.entryMetrics(e).volume, 0);
+        return '<div class="list-item" data-act="open-session" data-id="' + s.id + '"><div class="main"><div class="t">' + C.DAY_TYPE_CN[s.dayType] + ' · ' + s.date + '</div>' +
+          '<div class="s">' + C.fmtVolume(vol) + ' · ' + s.entries.filter(e => C.entryMetrics(e).sets > 0).length + ' 个动作</div></div><div class="dim">›</div></div>';
+      }).join('') + '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function defaultWeight(ex) {
+    if (ex.equipment === 'barbell') return 20;
+    if (ex.equipment === 'dumbbell') return 8;
+    if (ex.equipment === 'cable') return 15;
+    if (ex.equipment === 'machine') return 20;
+    return 0;
+  }
+
+  function cardWeek(ws) {
+    const today = C.localDate();
+    let html = '<div class="card"><div class="row between"><h2>本周</h2><span class="muted small">' + C.fmtVolume(ws.totalVolume) + '</span></div><div class="grid7" style="margin-top:10px">';
+    ws.days.forEach(d => {
+      const cls = (d.status === 'done' ? 'done' : d.status === 'rest' ? 'rest' : d.status === 'missed' ? 'missed' : d.status === 'today' ? 'today' : '') + (d.date === today ? ' today' : '');
+      const label = d.status === 'done' ? C.fmtNum(d.volume) : d.status === 'rest' ? '休' : d.status === 'missed' ? '缺' : d.plan ? C.DAY_TYPE_CN[d.plan].slice(0, 1) : '';
+      html += '<div class="daycell ' + cls + '"><div class="d">' + C.DAY_CN[d.key].slice(1) + '</div><div>' + label + '</div></div>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  function viewSession() {
+    const s = currentSession();
+    if (!s) { ui.screen = 'home'; return viewHome(); }
+    ui.sessionId = s.id;
+    let html = '<div class="topbar"><button class="btn btn-sm btn-ghost" data-act="leave">‹ 返回</button>' +
+      '<div class="grow"><div class="title">' + C.DAY_TYPE_CN[s.dayType] + ' · ' + s.date + '</div>' +
+      '<div class="sub">' + (isOn('duration') ? '已进行 <span id="elapsed">' + fmtClock(C.sessionDurationMin(s) * 60) + '</span>' : '训练中') + '</div></div>' +
+      '<button class="btn btn-sm" data-act="finish">结束</button></div>';
+    html += '<div class="screen">';
+    if (isOn('notes')) {
+      html += '<div class="card tight"><div class="tiny muted">训练备注</div><textarea data-session-note placeholder="今天状态、器械、计划调整…" style="margin-top:6px">' + esc(s.note || '') + '</textarea></div>';
+    }
+    if (!s.entries.length) html += '<div class="card center muted">还没有动作，点下面添加。</div>';
+    s.entries.forEach(e => { html += cardEntry(e, s); });
+    html += '<button class="btn btn-block" data-act="add-exercise">＋ 添加动作</button>';
+    html += '<button class="btn btn-primary btn-block btn-big" data-act="finish">结束训练</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function deltaChip(label, d, fmt) {
+    if (!d) return '';
+    const cls = d.abs > 0 ? 'pos' : d.abs < 0 ? 'neg' : 'zero';
+    return '<span class="chip ' + cls + '">' + label + ' ' + C.fmtDelta(d.abs, fmt || '') + ' ' + C.fmtPct(d.pct) + '</span>';
+  }
+
+  function cardEntry(e, s) {
+    const ex = C.getExercise(DB, e.exerciseId);
+    const cmp = C.compareEntry(DB, s, e);
+    const pr = isOn('pr') ? C.prStatus(DB, s, e) : null;
+    const goal = DB.goals.find(g => g.exerciseId === e.exerciseId);
+    const pending = (e.advice || []).filter(a => a.accepted == null).slice(-1)[0];
+    let html = '<div class="card"><div class="exercise-head"><div class="grow"><div class="name">' + esc(ex.name) + '</div>' +
+      '<div class="meta">' + C.MUSCLE_CN[ex.muscle] + ' · ' + (ex.unilateral ? '单侧' : '双侧') + (goal ? ' · 目标 ' + C.fmtNum(goal.weight) + 'kg×' + goal.reps : '') + '</div></div>';
+    html += '<div class="actions">';
+    if (isOn('goals')) html += '<button class="btn btn-sm btn-ghost" data-act="goal" data-ex="' + e.exerciseId + '">目标</button>';
+    html += '<button class="btn btn-sm btn-ghost" data-act="remove-exercise" data-ex="' + e.exerciseId + '">移除</button></div></div>';
+
+    if (!cmp.last) html += '<div class="chips"><span class="chip zero">首次记录</span>' + (cmp.cur.e1rm ? '<span class="chip">e1RM ' + cmp.cur.e1rm + '</span>' : cmp.cur.e1rmRef ? '<span class="chip">e1RM参考 ' + cmp.cur.e1rmRef + '</span>' : '') + '</div>';
+    else if (cmp.cur.sets === 0) {
+      html += '<div class="chips"><span class="chip">上次 ' + C.fmtVolume(cmp.last.m.volume) + ' · ' + cmp.last.m.reps + ' 次</span>';
+      if (cmp.prev) html += '<span class="chip">上上次 ' + C.fmtVolume(cmp.prev.m.volume) + '</span>';
+      if (isOn('compareAvgN') && cmp.avgN) html += '<span class="chip">近' + cmp.avgN.n + '次均 ' + C.fmtVolume(cmp.avgN.m.volume) + '</span>';
+      html += '<span class="chip zero">完成一组后显示对比</span></div>';
+    } else {
+      html += '<div class="chips">';
+      const sfxL = cmp.last && cmp.last.trimmed ? '(前' + cmp.curN + '组)' : '';
+      const sfxP = cmp.prev && cmp.prev.trimmed ? '(前' + cmp.curN + '组)' : '';
+      const sfxA = cmp.trimmed ? '(同组数)' : '';
+      if (isOn('compareLast')) html += deltaChip('较上次' + sfxL, cmp.last.d.volume, 'kg');
+      if (isOn('comparePrev')) html += deltaChip('较上上次' + sfxP, cmp.prev && cmp.prev.d.volume, 'kg');
+      if (isOn('compareAvgN') && cmp.avgN) html += deltaChip('近' + cmp.avgN.n + '次' + sfxA, cmp.avgN.d.volume, 'kg');
+      if (cmp.cur.e1rm) html += '<span class="chip">e1RM ' + cmp.cur.e1rm + '</span>';
+      else if (cmp.cur.e1rmRef) html += '<span class="chip">e1RM参考 ' + cmp.cur.e1rmRef + '</span>';
+      if (isOn('sameWeightReps')) {
+        const sw = C.sameWeightReps(DB, s, e);
+        if (sw) html += '<span class="chip ' + (sw.delta > 0 ? 'pos' : sw.delta < 0 ? 'neg' : 'zero') + '">' + C.fmtNum(sw.weight) + 'kg: ' + sw.cur + ' vs ' + sw.base + ' (' + C.fmtDelta(sw.delta) + ')</span>';
+      }
+      if (pr && pr.volume) html += '<span class="chip gold">🏆 容量 +' + C.fmtNum(pr.volume) + '</span>';
+      if (pr && pr.e1rm) html += '<span class="chip gold">🏆 e1RM +' + C.fmtNum(pr.e1rm) + '</span>';
+      html += '</div>';
+    }
+
+    if (isOn('unilateral') && ex.unilateral) {
+      const sm = C.sideMetrics(e);
+      if (sm.L || sm.R) {
+        html += '<div class="chips">';
+        if (sm.L) html += '<span class="chip">左 ' + C.fmtVolume(sm.L.volume) + ' · ' + sm.L.reps + ' 次</span>';
+        if (sm.R) html += '<span class="chip">右 ' + C.fmtVolume(sm.R.volume) + ' · ' + sm.R.reps + ' 次</span>';
+        if (sm.L && sm.R) {
+          const tot = sm.L.volume + sm.R.volume;
+          const lp = tot ? Math.round(sm.L.volume / tot * 100) : 50;
+          html += '<span class="chip ' + (Math.abs(lp - 50) <= 3 ? 'pos' : '') + '">左右 ' + lp + '/' + (100 - lp) + '</span>';
+        }
+        html += '</div>';
+      }
+    }
+
+    if (isOn('progressiveAdvice') && !C.workingSets(e).length) {
+      const a = C.progressiveAdvice(DB, e.exerciseId);
+      if (a) html += '<div class="advice"><div>' + esc(a.text) + '</div><div class="why">来自上次训练的规则建议</div></div>';
+    }
+
+    if (pending) {
+      html += '<div class="advice"><div>' + esc(pending.text) + '</div><div class="why">本组 ' + pending.prevR + ' 次 → ' + pending.curR + ' 次，下降 ' + pending.drop + '%（阈值 ' + pending.threshold + '%）</div>' +
+        '<div class="row"><button class="btn btn-sm btn-primary" data-act="advice-adopt" data-ex="' + e.exerciseId + '">采用</button>' +
+        '<button class="btn btn-sm" data-act="advice-ignore" data-ex="' + e.exerciseId + '">忽略</button></div></div>';
+    }
+
+    html += '<div style="margin-top:8px">';
+    e.sets.forEach((st, i) => { html += setRow(e, st, i); });
+    html += '</div>';
+
+    html += '<div class="row" style="margin-top:8px">' +
+      '<button class="btn btn-sm grow" data-act="add-set" data-ex="' + e.exerciseId + '">＋ 添加一组</button>' +
+      (isOn('warmupRamp') ? '<button class="btn btn-sm" data-act="warmup-ramp" data-ex="' + e.exerciseId + '">热身阶梯</button>' : '') +
+      '</div>';
+
+    if (isOn('advancedMetrics')) html += advancedPanel(cmp, s);
+    if (isOn('notes')) {
+      html += '<details><summary>备注</summary><textarea data-note-ex="' + e.exerciseId + '" placeholder="动作感受、器械设置…">' + esc(e.note || '') + '</textarea></details>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function setRow(e, st, i) {
+    const warm = st.type === 'warmup';
+    const ex = C.getExercise(DB, e.exerciseId);
+    const sideOn = isOn('unilateral') && ex.unilateral;
+    const rpeOn = isOn('rpe') && st.done && !warm;
+    let html = '<div class="setrow ' + (warm ? 'warmup' : '') + ' ' + (st.done ? 'done' : '') + '">';
+    if (isOn('warmup')) {
+      html += '<button class="type-badge ' + (warm ? '' : 'work') + '" data-act="toggle-type" data-ex="' + e.exerciseId + '" data-i="' + i + '">' + (warm ? '热' : (i + 1)) + '</button>';
+    } else html += '<div class="type-badge work">' + (i + 1) + '</div>';
+    html += '<div class="stepper"><button data-act="dec-w" data-ex="' + e.exerciseId + '" data-i="' + i + '">−</button>' +
+      '<span class="val">' + C.fmtNum(st.w) + '</span>' +
+      '<button data-act="inc-w" data-ex="' + e.exerciseId + '" data-i="' + i + '">＋</button></div>';
+    html += '<div class="x">×</div>';
+    html += '<div class="stepper"><button data-act="dec-r" data-ex="' + e.exerciseId + '" data-i="' + i + '">−</button>' +
+      '<span class="val rep">' + st.r + '</span>' +
+      '<button data-act="inc-r" data-ex="' + e.exerciseId + '" data-i="' + i + '">＋</button></div>';
+    html += '<button class="donebtn ' + (st.done ? 'on' : '') + '" data-act="toggle-done" data-ex="' + e.exerciseId + '" data-i="' + i + '">' + (st.done ? '✓' : '○') + '</button>';
+    html += '<button class="delbtn" data-act="del-set" data-ex="' + e.exerciseId + '" data-i="' + i + '">✕</button>';
+    html += '</div>';
+    if (sideOn || rpeOn) {
+      html += '<div class="rpe-row">';
+      if (sideOn) {
+        html += '<button class="rpe-chip ' + (st.side ? 'set' : '') + '" data-act="toggle-side" data-ex="' + e.exerciseId + '" data-i="' + i + '">' +
+          (st.side === 'L' ? '左' : st.side === 'R' ? '右' : '双侧') + '</button>';
+      }
+      if (rpeOn) {
+        html += '<span class="tiny muted">RPE</span><select data-rpe data-ex="' + e.exerciseId + '" data-i="' + i + '">' +
+          [['', '—'], ['6', '6'], ['7', '7'], ['8', '8'], ['9', '9'], ['9.5', '9.5'], ['10', '10']].map(o =>
+            '<option value="' + o[0] + '"' + (String(st.rpe == null ? '' : st.rpe) === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
+          '</select>';
+      }
+      html += '</div>';
+    }
+    return html;
+  }
+
+  function advancedPanel(cmp, s) {
+    const c = cmp.cur;
+    const rows = [
+      ['总次数', c.reps], ['总组数', c.sets], ['平均每组容量', C.fmtVolume(c.avgSet)],
+      ['加权平均重量', c.avgWeight + ' kg'], ['最重一组', c.maxW + ' kg'], ['最佳单组容量', C.fmtVolume(c.bestSet)],
+      ['疲劳衰减', c.drop == null ? '—' : (C.round1(c.drop * 100) + '%')],
+      ['次数变异', c.cv == null ? '—' : C.round1(c.cv * 100) + '%'],
+      ['完成率', c.completion == null ? '—' : c.completion + '%']
+    ];
+    if (isOn('volumeDensity') && isOn('duration')) {
+      const mins = C.sessionDurationMin(s);
+      if (mins > 0) rows.push(['容量密度', C.round1(c.volume / mins) + ' kg/min']);
+    }
+    let html = '<details><summary>展开全部指标</summary><table class="metric-table">';
+    rows.forEach(r => { html += '<tr><td class="muted">' + r[0] + '</td><td>' + r[1] + '</td></tr>'; });
+    if (cmp.last) {
+      html += '<tr><td class="muted">较上次</td><td>' + C.fmtDelta(cmp.last.d.volume.abs, 'kg') + ' / ' + C.fmtPct(cmp.last.d.volume.pct) + '</td></tr>';
+    }
+    if (cmp.avgN) {
+      html += '<tr><td class="muted">近' + cmp.avgN.n + '次平均</td><td>' + C.fmtVolume(cmp.avgN.m.volume) + '</td></tr>';
+    }
+    html += '</table></details>';
+    return html;
+  }
+
+  function viewSummary(id) {
+    const s = DB.sessions.find(x => x.id === id) || DB.sessions.find(x => x.status === 'in_progress');
+    if (!s) { ui.screen = 'home'; return viewHome(); }
+    const total = s.entries.reduce((a, e) => a + C.entryMetrics(e).volume, 0);
+    const doneEntries = s.entries.filter(e => C.entryMetrics(e).sets > 0);
+    const prs = C.findPrsForSession(DB, s);
+    let html = '<div class="topbar"><button class="btn btn-sm btn-ghost" data-act="nav-home">‹ 返回</button>' +
+      '<div class="grow"><div class="title">' + C.DAY_TYPE_CN[s.dayType] + ' · ' + s.date + '</div><div class="sub">训练总结</div></div></div>';
+    html += '<div class="screen">';
+    html += '<div class="stat-grid"><div class="card"><div class="stat-big">' + C.fmtVolume(total) + '</div><div class="stat-label">总容量</div></div>' +
+      '<div class="card"><div class="stat-big">' + doneEntries.length + '</div><div class="stat-label">完成动作</div></div>' +
+      (isOn('duration') ? '<div class="card"><div class="stat-big">' + fmtClock(C.sessionDurationMin(s) * 60) + '</div><div class="stat-label">时长</div></div>' : '') + '</div>';
+    if (prs.length) html += '<div class="card"><h2>🏆 本次 PR</h2>' + prs.map(p => '<div class="small" style="margin-top:6px">' + esc(p.name) + '：' + Object.keys(p.pr).map(k => ({ volume: '容量 +' + C.fmtNum(p.pr.volume), reps: '次数 +' + p.pr.reps, maxW: '最重 +' + C.fmtNum(p.pr.maxW), e1rm: 'e1RM +' + C.fmtNum(p.pr.e1rm) }[k])).join('，') + '</div>').join('') + '</div>';
+    if (s.note) html += '<div class="card tight"><div class="tiny muted">训练备注</div><div class="small" style="margin-top:4px">' + esc(s.note) + '</div></div>';
+    s.entries.forEach(e => {
+      const ex = C.getExercise(DB, e.exerciseId);
+      const m = C.entryMetrics(e);
+      if (!m.sets) {
+        html += '<div class="card tight"><div class="row between"><div style="font-weight:600">' + esc(ex.name) + '</div><span class="chip zero">未记录</span></div></div>';
+        return;
+      }
+      const cmp = C.compareEntry(DB, s, e);
+      const sfx = cmp.last && cmp.last.trimmed ? '(前' + cmp.curN + '组)' : '';
+      html += '<div class="card"><div class="row between"><div style="font-weight:650">' + esc(ex.name) + '</div><div class="muted small">' + C.fmtVolume(m.volume) + '</div></div>' +
+        '<div class="chips">' + (cmp.last ? deltaChip('较上次' + sfx, cmp.last.d.volume, 'kg') : '<span class="chip zero">首次</span>') +
+        '<span class="chip">' + m.sets + ' 组 · ' + m.reps + ' 次</span>' + (m.e1rm ? '<span class="chip">e1RM ' + m.e1rm + '</span>' : '') + '</div></div>';
+    });
+    html += '<button class="btn btn-danger btn-block" data-act="delete-session" data-id="' + s.id + '">删除这次训练</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function viewHistory() {
+    const base = C.addDays(new Date(), ui.weekOffset * 7);
+    const ws = C.weekStats(DB, base);
+    const list = DB.sessions.filter(s => s.status === 'finished').sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || ''));
+    let html = '<div class="topbar"><div class="title">历史</div></div><div class="screen">';
+    if (isOn('calendar')) {
+      html += '<div class="card"><div class="row between"><button class="btn btn-sm" data-act="week-prev">‹</button><div class="muted small">' + ws.start + ' 起</div><button class="btn btn-sm" data-act="week-next">›</button></div></div>' + cardWeek(ws);
+    }
+    html += '<div class="section-title">训练记录</div><div class="card">';
+    if (!list.length) html += '<div class="muted small">还没有记录，先去练一次。</div>';
+    list.slice(0, 30).forEach(s => {
+      const vol = s.entries.reduce((a, e) => a + C.entryMetrics(e).volume, 0);
+      const prs = C.findPrsForSession(DB, s).length;
+      html += '<div class="list-item" data-act="open-session" data-id="' + s.id + '"><div class="main"><div class="t">' + s.date + ' · ' + C.DAY_TYPE_CN[s.dayType] + '</div>' +
+        '<div class="s">' + C.fmtVolume(vol) + ' · ' + s.entries.filter(e => C.entryMetrics(e).sets > 0).length + ' 个动作' + (prs ? ' · 🏆 ' + prs : '') + '</div></div><div class="dim">›</div></div>';
+    });
+    html += '</div>';
+    if (isOn('prWall')) html += cardPrWall();
+    html += '</div>';
+    return html;
+  }
+
+  function cardPrWall() {
+    const wall = C.prWall(DB);
+    if (!wall.length) return '';
+    let html = '<div class="section-title">PR 墙</div><div class="card">';
+    wall.forEach(p => {
+      html += '<div class="list-item"><div class="main"><div class="t">' + esc(p.name) + '</div><div class="s">最佳容量 ' + C.fmtVolume(p.volume) + (p.e1rm ? ' · e1RM ' + p.e1rm : '') + '</div></div><div class="dim tiny">' + p.date + '</div></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function viewStats() {
+    let html = '<div class="topbar"><div class="title">统计</div></div><div class="screen">';
+    const finished = DB.sessions.filter(s => s.status === 'finished');
+    const totalVol = finished.reduce((a, s) => a + s.entries.reduce((b, e) => b + C.entryMetrics(e).volume, 0), 0);
+    const weekVol = C.weekStats(DB, new Date()).totalVolume;
+    html += '<div class="stat-grid"><div class="card"><div class="stat-big">' + finished.length + '</div><div class="stat-label">训练次数</div></div>' +
+      '<div class="card"><div class="stat-big">' + C.fmtVolume(totalVol) + '</div><div class="stat-label">历史总容量</div></div>' +
+      '<div class="card"><div class="stat-big">' + C.fmtVolume(weekVol) + '</div><div class="stat-label">本周容量</div></div></div>';
+    if (!isOn('muscleVolume') && !isOn('periodCompare') && !isOn('bodyweight') && !isOn('trendSlope')) {
+      html += '<div class="banner">肌群容量、周期对比、体重、趋势斜率可在设置里开启。</div>';
+    }
+    if (isOn('periodCompare')) {
+      const pc = C.periodCompare(DB, new Date());
+      html += '<div class="card"><h2>周期对比</h2><div class="row between" style="margin-top:8px"><div><div class="stat-big">' + C.fmtVolume(pc.cur) + '</div><div class="stat-label">本周容量</div></div>' +
+        '<div class="right center"><div class="' + (pc.abs > 0 ? 'pos' : pc.abs < 0 ? 'neg' : 'muted') + '">' + C.fmtDelta(pc.abs, 'kg') + '</div><div class="tiny muted">较 4 周前 ' + C.fmtVolume(pc.prev) + '</div></div></div></div>';
+    }
+    if (isOn('muscleVolume')) {
+      const mv = C.muscleVolume(DB, new Date());
+      html += '<div class="card"><h2>本周肌群容量</h2>';
+      if (!mv.length) html += '<div class="muted small" style="margin-top:6px">本周还没有训练。</div>';
+      const max = mv.length ? mv[0].volume : 1;
+      mv.forEach(x => {
+        html += '<div style="margin-top:10px"><div class="row between small"><span>' + (C.MUSCLE_CN[x.muscle] || x.muscle) + '</span><span class="muted">' + C.fmtVolume(x.volume) + '</span></div>' +
+          '<div class="bar" style="margin-top:4px"><i style="width:' + Math.round(x.volume / max * 100) + '%"></i></div></div>';
+      });
+      html += '</div>';
+    }
+    const exs = DB.exercises.filter(ex => C.historyFor(DB, ex.id, null).length);
+    const sel = ui.statsEx && exs.find(e => e.id === ui.statsEx) ? ui.statsEx : (exs[0] && exs[0].id);
+    html += '<div class="card"><div class="row between"><h2>动作趋势</h2><div class="row"><select id="statsEx">' + exs.map(e => '<option value="' + e.id + '"' + (e.id === sel ? ' selected' : '') + '>' + esc(e.name) + '</option>').join('') + '</select>' +
+      (sel ? '<button class="btn btn-sm" data-act="open-exercise" data-id="' + sel + '">详情</button>' : '') + '</div></div>';
+    if (sel) {
+      const h = C.historyFor(DB, sel, null).slice(0, 8).reverse();
+      const vals = h.map(x => x.m.volume);
+      html += sparkline(vals);
+      if (isOn('trendSlope')) {
+        const sl = C.trendSlope(DB, sel, 'volume', 6);
+        if (sl != null) html += '<div class="small muted" style="margin-top:6px">容量趋势 ' + C.fmtDelta(sl, 'kg') + ' / 次</div>';
+      }
+      html += '<div class="small muted" style="margin-top:6px">最近 ' + h.length + ' 次：' + h.map(x => C.fmtVolume(x.m.volume)).join(' → ') + '</div>';
+      if (isOn('exerciseDetail')) {
+        html += h.slice().reverse().slice(0, 5).map(x =>
+          '<div class="list-item"><div class="main"><div class="t">' + x.session.date + '</div><div class="s">' +
+          C.fmtVolume(x.m.volume) + ' · ' + x.m.sets + ' 组 · ' + x.m.reps + ' 次</div></div></div>').join('');
+      }
+    }
+    html += '</div>';
+    if (isOn('bodyweight')) html += cardBodyweight();
+    html += '</div>';
+    return html;
+  }
+
+  function sparkline(vals) {
+    if (!vals.length) return '';
+    const w = 300, h = 46, pad = 4;
+    const min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+    const span = max - min || 1;
+    const pts = vals.map((v, i) => {
+      const x = pad + (w - pad * 2) * (vals.length === 1 ? 0.5 : i / (vals.length - 1));
+      const y = h - pad - (h - pad * 2) * ((v - min) / span);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none"><polyline fill="none" stroke="var(--accent)" stroke-width="2" points="' + pts + '"/></svg>';
+  }
+
+  function cardBodyweight() {
+    const bw = DB.bodyweights.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+    if (!bw.length) return '<div class="card"><h2>体重</h2><div class="muted small" style="margin-top:6px">还没有记录。</div><button class="btn btn-sm" style="margin-top:8px" data-act="add-bodyweight">记录体重</button></div>';
+    const chrono = bw.slice().reverse();
+    const vals = chrono.map(x => x.kg);
+    const delta = bw.length > 1 ? C.round1(bw[0].kg - bw[1].kg) : null;
+    return '<div class="card"><div class="row between"><h2>体重</h2><button class="btn btn-sm" data-act="add-bodyweight">记录</button></div>' +
+      '<div class="row between" style="margin-top:6px"><span class="stat-big">' + bw[0].kg + ' kg</span>' +
+      (delta == null ? '' : '<span class="small ' + (delta > 0 ? 'neg' : delta < 0 ? 'pos' : 'muted') + '">较上次 ' + C.fmtDelta(delta) + ' kg</span>') + '</div>' +
+      (vals.length >= 2 ? lineChart(vals, rollingAvg(vals, 4)) : '<div class="muted small" style="margin-top:8px">再记录一次即可看趋势。</div>') +
+      '<div style="margin-top:4px">' + bw.slice(0, 10).map(x => '<div class="row between tiny" style="padding:3px 0"><span class="muted">' + x.date + '</span><span>' + x.kg + ' kg</span></div>').join('') + '</div></div>';
+  }
+
+  function rollingAvg(vals, n) {
+    return vals.map((_, i) => {
+      const s = vals.slice(Math.max(0, i - n + 1), i + 1).filter(v => v != null);
+      return s.length ? C.mean(s) : null;
+    });
+  }
+
+  function lineChart(values, avg) {
+    if (!values || !values.length) return '<div class="muted small">数据不足</div>';
+    const w = 320, h = 90, pad = 8;
+    const all = values.concat(avg || []).filter(v => v != null);
+    if (!all.length) return '<div class="muted small">数据不足</div>';
+    const min = Math.min.apply(null, all), max = Math.max.apply(null, all), span = (max - min) || 1;
+    const xy = (v, i) => [pad + (w - pad * 2) * (values.length <= 1 ? 0.5 : i / (values.length - 1)), h - pad - (h - pad * 2) * ((v - min) / span)];
+    const path = (arr) => arr.map((v, i) => v == null ? '' : xy(v, i).map(n => n.toFixed(1)).join(',')).filter(Boolean).join(' ');
+    return '<svg class="chart" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+      '<polyline fill="none" stroke="var(--accent)" stroke-width="2" points="' + path(values) + '"/>' +
+      (avg ? '<polyline fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4" points="' + path(avg) + '"/>' : '') +
+      '</svg>';
+  }
+
+  function viewTemplate() {
+    const day = ui.tplDay || 'push';
+    const tpl = DB.templates[day] || (DB.templates[day] = []);
+    let html = '<div class="topbar"><button class="btn btn-sm btn-ghost" data-act="nav-settings">‹ 返回</button>' +
+      '<div class="grow"><div class="title">训练模板</div><div class="sub">修改后从下次训练开始生效</div></div></div>';
+    html += '<div class="screen">';
+    html += '<div class="card"><h2>周计划</h2>';
+    C.DAYS.forEach(k => {
+      const cur = DB.weekPlan[k] || '';
+      html += '<div class="row between tpl-week-row"><span>' + C.DAY_CN[k] + '</span><select data-week-day="' + k + '">' +
+        [['', '休息'], ['push', '推日'], ['pull', '拉日'], ['legs', '腿日']].map(o =>
+          '<option value="' + o[0] + '"' + (cur === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
+        '</select></div>';
+    });
+    html += '</div>';
+    html += '<div class="row">' + ['push', 'pull', 'legs'].map(d =>
+      '<button class="btn btn-sm grow ' + (d === day ? 'btn-primary' : '') + '" data-act="tpl-day" data-day="' + d + '">' + C.DAY_TYPE_CN[d] + '</button>').join('') + '</div>';
+    html += '<div class="card"><h2>' + C.DAY_TYPE_CN[day] + '动作</h2>';
+    if (!tpl.length) html += '<div class="muted small" style="margin-top:6px">还没有动作，从下面添加。</div>';
+    tpl.forEach((t, i) => {
+      const ex = C.getExercise(DB, t.exerciseId);
+      html += '<div class="tpl-item">' +
+        '<div class="tpl-head"><div class="grow"><b>' + esc(ex.name) + '</b><div class="tiny muted">第 ' + (i + 1) + ' 个</div></div>' +
+        '<button class="btn btn-sm" data-act="tpl-up" data-i="' + i + '">↑</button>' +
+        '<button class="btn btn-sm" data-act="tpl-down" data-i="' + i + '">↓</button>' +
+        '<button class="btn btn-sm btn-danger" data-act="tpl-del" data-i="' + i + '">删除</button></div>' +
+        '<div class="tpl-fields">' +
+        '<label>组数<input type="number" inputmode="numeric" min="1" data-tpl-ex="' + t.exerciseId + '" data-tpl-field="sets" value="' + t.sets + '"></label>' +
+        '<label>次数下限<input type="number" inputmode="numeric" min="1" data-tpl-ex="' + t.exerciseId + '" data-tpl-field="repMin" value="' + t.repMin + '"></label>' +
+        '<label>次数上限<input type="number" inputmode="numeric" min="1" data-tpl-ex="' + t.exerciseId + '" data-tpl-field="repMax" value="' + t.repMax + '"></label>' +
+        '<label>休息秒<input type="number" inputmode="numeric" min="0" step="15" data-tpl-ex="' + t.exerciseId + '" data-tpl-field="restSec" value="' + t.restSec + '"></label>' +
+        '</div></div>';
+    });
+    html += '</div>';
+    html += '<div class="card"><h2>添加动作</h2><div class="row" style="margin-top:8px"><select id="tplAddEx" style="flex:1">' +
+      DB.exercises.map(e => '<option value="' + e.id + '">' + esc(e.name) + '</option>').join('') +
+      '</select><button class="btn btn-sm btn-primary" data-act="tpl-add">添加</button></div></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function viewExercise() {
+    const ex = DB.exercises.find(e => e.id === ui.exId) || DB.exercises[0];
+    const h = C.historyFor(DB, ex.id, null);
+    const chrono = h.slice().reverse();
+    const vols = chrono.map(x => x.m.volume);
+    const e1s = chrono.map(x => x.m.e1rm);
+    const n = DB.settings.compareN || 4;
+    const best = h.reduce((a, x) => ({
+      volume: Math.max(a.volume, x.m.volume || 0),
+      e1rm: Math.max(a.e1rm, x.m.e1rm || 0),
+      maxW: Math.max(a.maxW, x.m.maxW || 0)
+    }), { volume: 0, e1rm: 0, maxW: 0 });
+    let html = '<div class="topbar"><button class="btn btn-sm btn-ghost" data-act="nav-stats">‹ 返回</button>' +
+      '<div class="grow"><div class="title">' + esc(ex.name) + '</div><div class="sub">' + (C.MUSCLE_CN[ex.muscle] || ex.muscle) + ' · ' + (EQUIP_CN[ex.equipment] || ex.equipment) + '</div></div></div>';
+    html += '<div class="screen">';
+    html += '<div class="stat-grid"><div class="card"><div class="stat-big">' + h.length + '</div><div class="stat-label">记录次数</div></div>' +
+      '<div class="card"><div class="stat-big">' + C.fmtVolume(best.volume) + '</div><div class="stat-label">最佳容量</div></div>' +
+      '<div class="card"><div class="stat-big">' + (best.e1rm ? best.e1rm : '—') + '</div><div class="stat-label">最佳 e1RM</div></div></div>';
+    html += '<div class="card"><div class="row between"><h2>容量趋势</h2><span class="tiny muted">虚线：近' + n + '次平均</span></div>' +
+      lineChart(vols, rollingAvg(vols, n)) + '</div>';
+    html += '<div class="card"><div class="row between"><h2>e1RM 趋势</h2><span class="tiny muted">仅 1–12 次</span></div>' +
+      lineChart(e1s, rollingAvg(e1s, n)) + '</div>';
+    html += '<div class="card"><h2>全部记录</h2>';
+    if (!h.length) html += '<div class="muted small">还没有记录。</div>';
+    h.forEach(x => {
+      html += '<div class="list-item"><div class="main"><div class="t">' + x.session.date + '</div>' +
+        '<div class="s">' + C.fmtVolume(x.m.volume) + ' · ' + x.m.sets + ' 组 · ' + x.m.reps + ' 次' +
+        (x.m.e1rm ? ' · e1RM ' + x.m.e1rm : '') + '</div></div><div class="dim tiny">' + C.DAY_TYPE_CN[x.session.dayType] + '</div></div>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  function viewExerciseEditor() {
+    const ex = DB.exercises.find(e => e.id === ui.exEdit);
+    if (!ex) return '';
+    return '<div class="overlay" data-act="close-ex-edit"><div class="sheet" data-stop="1"><div class="handle"></div>' +
+      '<h2>编辑动作</h2>' +
+      '<label class="tiny muted">名称<input id="exName" value="' + esc(ex.name) + '" style="width:100%;margin-top:4px"></label>' +
+      '<div class="row" style="margin-top:8px"><label class="tiny muted grow">肌群<select id="exMuscle" style="width:100%;margin-top:4px">' +
+      Object.keys(C.MUSCLE_CN).map(k => '<option value="' + k + '"' + (ex.muscle === k ? ' selected' : '') + '>' + C.MUSCLE_CN[k] + '</option>').join('') +
+      '</select></label><label class="tiny muted grow">器材<select id="exEquipment" style="width:100%;margin-top:4px">' +
+      Object.keys(EQUIP_CN).map(k => '<option value="' + k + '"' + (ex.equipment === k ? ' selected' : '') + '>' + EQUIP_CN[k] + '</option>').join('') +
+      '</select></label></div>' +
+      '<label class="row small" style="gap:6px;margin-top:10px"><input type="checkbox" id="exUnilateral"' + (ex.unilateral ? ' checked' : '') + '> 单侧动作（左右分别记录）</label>' +
+      '<div class="row" style="margin-top:12px"><button class="btn grow" data-act="close-ex-edit">取消</button>' +
+      '<button class="btn btn-primary grow" data-act="save-exercise" data-id="' + ex.id + '">保存</button></div></div></div>';
+  }
+
+  function viewSettings() {
+    let html = '<div class="topbar"><div class="title">设置</div></div><div class="screen">';
+    html += '<div class="card"><h2>预设</h2><div class="row" style="margin-top:8px">' +
+      '<button class="btn btn-sm grow" data-act="preset" data-preset="minimal">极简</button>' +
+      '<button class="btn btn-sm grow" data-act="preset" data-preset="standard">标准</button>' +
+      '<button class="btn btn-sm grow" data-act="preset" data-preset="full">全开</button></div>' +
+      '<div class="tiny muted" style="margin-top:6px">当前：' + (DB.settings.preset === 'custom' ? '自定义' : DB.settings.preset) + '</div></div>';
+
+    html += '<div class="card"><h2>训练模板</h2><div class="muted small" style="margin-top:4px">编辑周计划、动作顺序、组数、次数区间与休息时长</div>' +
+      '<button class="btn btn-sm" style="margin-top:8px" data-act="open-template">编辑模板</button></div>';
+
+    html += '<div class="card"><h2>对比与计时</h2>' +
+      '<div class="row between" style="margin-top:8px"><span>近 N 次平均</span><select id="compareN">' +
+      [2, 3, 4, 5, 6, 7, 8].map(n => '<option' + (DB.settings.compareN === n ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
+      '<div class="row between" style="margin-top:8px"><span>复合动作休息（秒）</span><input id="restCompound" type="number" inputmode="numeric" value="' + DB.settings.restTimer.compound + '" style="width:90px"></div>' +
+      '<div class="row between" style="margin-top:8px"><span>孤立动作休息（秒）</span><input id="restIsolation" type="number" inputmode="numeric" value="' + DB.settings.restTimer.isolation + '" style="width:90px"></div></div>';
+
+    html += '<div class="card"><h2>外观</h2>' +
+      '<div class="row between" style="margin-top:8px"><span>主题</span><div class="row">' +
+      [['ocean', '深海'], ['graphite', '石墨'], ['light', '浅色']].map(t =>
+        '<button class="btn btn-sm ' + (themeOf() === t[0] ? 'btn-primary' : '') + '" data-act="theme" data-theme="' + t[0] + '">' + t[1] + '</button>').join('') +
+      '</div></div>' +
+      '<div class="row between" style="margin-top:8px"><span>字号</span><span class="row"><button class="btn btn-sm" data-act="font" data-v="0.9">小</button><button class="btn btn-sm" data-act="font" data-v="1">中</button><button class="btn btn-sm" data-act="font" data-v="1.15">大</button></span></div></div>';
+
+    const groups = ['核心', '记录', '对比', '教练', '历史', '统计', '工具', '数据'];
+    groups.forEach(g => {
+      const fs = C.FEATURES.filter(f => f.group === g);
+      if (!fs.length) return;
+      html += '<div class="card"><h2>' + g + '</h2><div class="switch-group">';
+      fs.forEach(f => {
+        const on = isOn(f.id);
+        html += '<div class="switch-row"><div class="main"><div>' + f.name + '</div><div class="s">' + (f.locked ? '核心功能，不可关闭' : (on ? '已开启' : '已关闭')) + '</div></div>' +
+          '<button class="switch ' + (on ? 'on' : '') + (f.locked ? ' disabled' : '') + '" data-act="toggle-feature" data-id="' + f.id + '"></button></div>';
+      });
+      html += '</div></div>';
+    });
+
+    html += '<div class="card"><h2>数据管理</h2><div class="row" style="margin-top:8px;flex-wrap:wrap">' +
+      '<button class="btn btn-sm" data-act="export">导出 JSON</button>' +
+      '<button class="btn btn-sm" data-act="import">导入 JSON</button>' +
+      '<button class="btn btn-sm" data-act="demo">载入示例</button>' +
+      '<button class="btn btn-sm btn-danger" data-act="reset">清空重置</button></div>' +
+      '<input id="importFile" type="file" accept="application/json,.json" class="hidden">' +
+      '<div class="tiny muted" style="margin-top:8px">上次导出：' + (DB.settings.lastExportAt ? new Date(DB.settings.lastExportAt).toLocaleString() : '从未') + '</div></div>';
+
+    if (isOn('exerciseLibrary')) html += cardLibrary();
+    html += '<div class="card small muted">健身记录 PWA · v1.0 · 数据只存在本机浏览器，请定期导出备份。</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function cardLibrary() {
+    let html = '<div class="card"><h2>动作库</h2><div style="margin-top:8px">';
+    DB.exercises.forEach(ex => {
+      html += '<div class="list-item"><div class="main"><div class="t">' + esc(ex.name) + '</div><div class="s">' + (C.MUSCLE_CN[ex.muscle] || ex.muscle) + ' · ' + (EQUIP_CN[ex.equipment] || ex.equipment) + (ex.unilateral ? ' · 单侧' : '') + '</div></div>' +
+        '<button class="btn btn-sm" data-act="edit-exercise" data-id="' + ex.id + '">编辑</button>' +
+        (ex.custom ? '<button class="btn btn-sm btn-danger" data-act="del-exercise" data-id="' + ex.id + '">删除</button>' : '') + '</div>';
+    });
+    html += '</div><div class="row" style="margin-top:10px;flex-wrap:wrap"><input id="newExName" placeholder="新动作名称" style="flex:1;min-width:140px">' +
+      '<select id="newExMuscle">' + Object.keys(C.MUSCLE_CN).map(k => '<option value="' + k + '">' + C.MUSCLE_CN[k] + '</option>').join('') + '</select>' +
+      '<select id="newExEquipment">' + Object.keys(EQUIP_CN).map(k => '<option value="' + k + '">' + EQUIP_CN[k] + '</option>').join('') + '</select>' +
+      '<label class="row small" style="gap:4px"><input type="checkbox" id="newExUnilateral"> 单侧</label>' +
+      '<button class="btn btn-sm btn-primary" data-act="add-exercise-lib">添加</button></div></div>';
+    return html;
+  }
+
+  function viewPicker() {
+    const s = currentSession();
+    const used = s ? s.entries.map(e => e.exerciseId) : [];
+    const list = DB.exercises.filter(e => used.indexOf(e.id) < 0);
+    return '<div class="overlay" data-act="close-sheet"><div class="sheet" data-stop="1"><div class="handle"></div><h2>添加动作</h2>' +
+      list.map(e => '<div class="picker-item" data-act="pick-exercise" data-id="' + e.id + '"><div class="main"><div class="t">' + esc(e.name) + '</div><div class="s muted">' + (C.MUSCLE_CN[e.muscle] || e.muscle) + '</div></div><span class="dim">＋</span></div>').join('') +
+      '<button class="btn btn-ghost btn-block" data-act="close-sheet">取消</button></div></div>';
+  }
+
+  function viewModal() {
+    const m = ui.modal;
+    return '<div class="overlay" data-act="modal-no"><div class="sheet" data-stop="1"><div class="handle"></div><h2>' + esc(m.title) + '</h2>' +
+      '<div class="muted small">' + esc(m.text || '') + '</div><div class="row" style="margin-top:10px">' +
+      '<button class="btn grow" data-act="modal-no">取消</button>' +
+      '<button class="btn btn-primary grow" data-act="modal-yes">确定</button></div></div></div>';
+  }
+
+  /* ---------- 交互 ---------- */
+  function findEntry(exId) {
+    const s = currentSession();
+    return s && s.entries.find(e => e.exerciseId === exId);
+  }
+
+  function start(type, copy) {
+    if (activeSession()) { ui.sessionId = activeSession().id; ui.screen = 'session'; render(); return; }
+    const s = C.startSession(DB, type, { copyLast: !!copy });
+    s.entries.forEach(e => C.prefillFromLast(DB, e));
+    s.entries.forEach(e => { if (!e.sets.length) C.addSet(e, { w: defaultWeight(C.getExercise(DB, e.exerciseId)) }); });
+    ui.sessionId = s.id;
+    ui.screen = 'session';
+    save(); snapshot();
+    acquireWake();
+    render();
+  }
+
+  function finish() {
+    const s = currentSession();
+    if (!s) return;
+    const noteEl = document.querySelector('[data-session-note]');
+    if (noteEl) s.note = noteEl.value;
+    if (ui.timer) recordRest();
+    C.finishSession(s);
+    releaseWake();
+    save();
+    ui.sessionId = null;
+    ui.detailId = s.id;
+    ui.screen = isOn('summary') ? 'summary' : 'home';
+    toast('训练已保存');
+    render();
+  }
+
+  function openSession(id) {
+    ui.detailId = id;
+    ui.screen = 'summary';
+    render();
+  }
+
+  function deleteSession(id) {
+    DB.sessions = DB.sessions.filter(s => s.id !== id);
+    save();
+    ui.screen = 'history';
+    toast('已删除');
+    render();
+  }
+
+  function onAction(el) {
+    const act = el.dataset.act;
+    const exId = el.dataset.ex;
+    const idx = el.dataset.i != null ? Number(el.dataset.i) : null;
+    if (!act) return;
+
+    if (act.indexOf('nav-') === 0) { ui.screen = act.slice(4); ui.sessionId = null; render(); return; }
+    if (act === 'start') { start(el.dataset.type, false); return; }
+    if (act === 'start-copy') { start(el.dataset.type, true); return; }
+    if (act === 'resume') { ui.sessionId = activeSession().id; ui.screen = 'session'; acquireWake(); render(); return; }
+    if (act === 'leave') { ui.screen = activeSession() ? 'home' : 'home'; render(); return; }
+    if (act === 'finish') { ui.modal = { title: '结束训练？', text: '结束后仍可修改历史数据（通过导入），但本次训练会进入已结束状态。', act: 'do-finish' }; render(); return; }
+    if (act === 'add-exercise') { ui.picker = true; render(); return; }
+    if (act === 'close-sheet') { ui.picker = false; render(); return; }
+    if (act === 'pick-exercise') {
+      const s = currentSession();
+      const t = (DB.templates[s.dayType] || []).find(x => x.exerciseId === el.dataset.id);
+      const e = C.makeEntry(DB, el.dataset.id, t);
+      C.prefillFromLast(DB, e);
+      if (!e.sets.length) C.addSet(e, { w: defaultWeight(C.getExercise(DB, el.dataset.id)) });
+      s.entries.push(e);
+      ui.picker = false;
+      save(); render(); return;
+    }
+    if (act === 'remove-exercise') {
+      const s = currentSession();
+      pushUndo();
+      s.entries = s.entries.filter(e => e.exerciseId !== exId);
+      save(); toast('已移除动作', false, true); render(); return;
+    }
+    if (act === 'add-set') { C.addSet(findEntry(exId)); save(); render(); return; }
+    if (act === 'del-set') {
+      const e = findEntry(exId); pushUndo();
+      e.sets.splice(idx, 1); save(); toast('已删除一组', false, true); render(); return;
+    }
+    if (act === 'toggle-type') {
+      const e = findEntry(exId), st = e.sets[idx];
+      if (!isOn('warmup')) return;
+      st.type = st.type === 'warmup' ? 'work' : 'warmup';
+      save(); render(); return;
+    }
+    if (act === 'toggle-side') {
+      const e = findEntry(exId), st = e.sets[idx];
+      st.side = st.side == null ? 'L' : st.side === 'L' ? 'R' : null;
+      save(); render(); return;
+    }
+    if (act === 'toggle-done') {
+      const e = findEntry(exId), st = e.sets[idx];
+      st.done = !st.done;
+      if (st.done) {
+        if (st.type === 'work') { startRest(e, idx); diagnose(e); }
+        vibrate(15);
+      } else {
+        if (ui.timer && ui.timer.entryId === exId && ui.timer.setIndex === idx) recordRest();
+      }
+      save(); render(); return;
+    }
+    if (act === 'inc-w' || act === 'dec-w') {
+      const e = findEntry(exId), st = e.sets[idx];
+      const step = ui.fine ? 0.5 : 2.5;
+      st.w = Math.max(0, C.round1(st.w + (act === 'inc-w' ? step : -step)));
+      ui.fine = false; save(); render(); return;
+    }
+    if (act === 'inc-r' || act === 'dec-r') {
+      const e = findEntry(exId), st = e.sets[idx];
+      st.r = Math.max(1, st.r + (act === 'inc-r' ? 1 : -1));
+      save(); render(); return;
+    }
+    if (act === 'warmup-ramp') {
+      const e = findEntry(exId);
+      const first = e.sets.find(s => s.type === 'work');
+      const base = first ? first.w : 20;
+      const ramp = C.warmupRamp(base);
+      ramp.forEach(r => e.sets.unshift({ w: r.w, r: r.r, type: 'warmup', side: null, rpe: null, done: false }));
+      save(); toast('已添加热身组'); render(); return;
+    }
+    if (act === 'goal') {
+      const cur = DB.goals.find(g => g.exerciseId === exId);
+      const w = prompt('目标重量（kg）', cur ? cur.weight : 60);
+      if (w == null) return;
+      const r = prompt('目标次数', cur ? cur.reps : 8);
+      if (r == null) return;
+      DB.goals = DB.goals.filter(g => g.exerciseId !== exId);
+      DB.goals.push({ exerciseId: exId, weight: Number(w) || 0, reps: Number(r) || 1 });
+      save(); render(); return;
+    }
+    if (act === 'advice-adopt' || act === 'advice-ignore') {
+      const e = findEntry(exId);
+      const a = (e.advice || []).filter(x => x.accepted == null).slice(-1)[0];
+      if (!a) return;
+      a.accepted = act === 'advice-adopt';
+      if (a.accepted) {
+        if (a.kind === 'weight' && a.weightRange) {
+          let target = e.sets.find(s => !s.done && s.type === 'work');
+          if (target) target.w = a.weightRange[0];
+          else C.addSet(e, { w: a.weightRange[0], r: (e.planned && e.planned.repMin) || 8 });
+        }
+        if (a.kind === 'rest' && ui.timer && a.restTo) {
+          ui.timer.planned = a.restTo;
+          ui.timer.endAt = ui.timer.startAt + a.restTo * 1000;
+          ui.timer.over = false;
+          saveTimer();
+        }
+      }
+      save(); render(); return;
+    }
+    if (act === 'timer-stop') { recordRest(); render(); return; }
+    if (act === 'timer-plus' || act === 'timer-plus60' || act === 'timer-minus') {
+      if (!ui.timer) return;
+      const d = act === 'timer-plus' ? 30 : act === 'timer-plus60' ? 60 : -30;
+      if (d > 0) { ui.timer.endAt += d * 1000; ui.timer.over = false; }
+      else ui.timer.endAt = Math.max(Date.now() + 5000, ui.timer.endAt - 30000);
+      ui.timer.adjusts.push({ delta: d, at: C.nowIso() });
+      saveTimer(); renderTimer(); return;
+    }
+    if (act === 'open-template') { ui.screen = 'template'; render(); return; }
+    if (act === 'tpl-day') { ui.tplDay = el.dataset.day; render(); return; }
+    if (act === 'tpl-up' || act === 'tpl-down') {
+      const tpl = DB.templates[ui.tplDay];
+      const i = Number(el.dataset.i), j = act === 'tpl-up' ? i - 1 : i + 1;
+      if (j < 0 || j >= tpl.length) return;
+      const tmp = tpl[i]; tpl[i] = tpl[j]; tpl[j] = tmp;
+      save(); render(); return;
+    }
+    if (act === 'tpl-del') { DB.templates[ui.tplDay].splice(Number(el.dataset.i), 1); save(); render(); return; }
+    if (act === 'tpl-add') {
+      const sel = document.getElementById('tplAddEx');
+      if (!sel) return;
+      const tpl = DB.templates[ui.tplDay];
+      if (tpl.some(x => x.exerciseId === sel.value)) { toast('模板里已有这个动作', true); return; }
+      tpl.push({ exerciseId: sel.value, sets: 3, repMin: 8, repMax: 12, restSec: 90 });
+      save(); toast('已添加'); render(); return;
+    }
+    if (act === 'edit-exercise') { ui.exEdit = el.dataset.id; render(); return; }
+    if (act === 'close-ex-edit') { ui.exEdit = null; render(); return; }
+    if (act === 'save-exercise') {
+      const ex = DB.exercises.find(x => x.id === el.dataset.id);
+      if (!ex) return;
+      const name = (document.getElementById('exName') || {}).value || ex.name;
+      const muscle = (document.getElementById('exMuscle') || {}).value || ex.muscle;
+      const equipment = (document.getElementById('exEquipment') || {}).value || ex.equipment;
+      const uni = !!(document.getElementById('exUnilateral') || {}).checked;
+      ex.name = name.trim() || ex.name;
+      ex.muscle = muscle;
+      ex.equipment = equipment;
+      ex.unilateral = uni;
+      save(); ui.exEdit = null; toast('已保存'); render(); return;
+    }
+    if (act === 'open-exercise') { ui.exId = el.dataset.id; ui.screen = 'exercise'; render(); return; }
+    if (act === 'open-session') { openSession(el.dataset.id); return; }
+    if (act === 'delete-session') { ui.modal = { title: '删除这次训练？', text: '该记录会从历史中移除，且无法恢复。', act: 'do-delete-session', id: el.dataset.id }; render(); return; }
+    if (act === 'week-prev') { ui.weekOffset--; render(); return; }
+    if (act === 'week-next') { ui.weekOffset++; render(); return; }
+    if (act === 'preset') { C.applyPreset(DB, el.dataset.preset); save(); toast('已切换预设'); render(); return; }
+    if (act === 'toggle-feature') {
+      const f = C.FEATURES.find(x => x.id === el.dataset.id);
+      if (!f || f.locked) return;
+      DB.settings.features[f.id] = !isOn(f.id);
+      DB.settings.preset = 'custom';
+      save(); render(); return;
+    }
+    if (act === 'theme') { DB.settings.theme = el.dataset.theme; save(); render(); return; }
+    if (act === 'font') { DB.settings.fontScale = Number(el.dataset.v); save(); render(); return; }
+    if (act === 'export') { doExport(); return; }
+    if (act === 'import') { document.getElementById('importFile').click(); return; }
+    if (act === 'demo') { ui.modal = { title: '载入示例数据？', text: '会清空当前训练记录并生成 6 周示例。', act: 'do-demo' }; render(); return; }
+    if (act === 'reset') { ui.modal = { title: '清空所有数据？', text: '训练、动作、设置都会恢复初始状态。建议先导出。', act: 'do-reset' }; render(); return; }
+    if (act === 'add-exercise-lib') {
+      const name = (document.getElementById('newExName') || {}).value || '';
+      const muscle = (document.getElementById('newExMuscle') || {}).value || 'other';
+      const equipment = (document.getElementById('newExEquipment') || {}).value || 'other';
+      const uni = !!(document.getElementById('newExUnilateral') || {}).checked;
+      if (!name.trim()) { toast('请输入动作名称', true); return; }
+      DB.exercises.push({ id: C.uid('ex'), name: name.trim(), muscle, equipment, unilateral: uni, custom: true });
+      save(); toast('已添加'); render(); return;
+    }
+    if (act === 'del-exercise') {
+      DB.exercises = DB.exercises.filter(e => e.id !== el.dataset.id);
+      save(); render(); return;
+    }
+    if (act === 'add-bodyweight') {
+      const v = prompt('体重（kg）');
+      if (v == null) return;
+      DB.bodyweights.push({ date: C.localDate(), kg: Number(v) || 0 });
+      save(); render(); return;
+    }
+    if (act === 'undo') {
+      if (!undoSave) return;
+      try { DB = JSON.parse(undoSave); undoSave = null; save(); toast('已撤销'); render(); } catch (e) { toast('撤销失败', true); }
+      return;
+    }
+    if (act === 'modal-no') { ui.modal = null; render(); return; }
+    if (act === 'modal-yes') {
+      const m = ui.modal; ui.modal = null;
+      if (!m) { render(); return; }
+      if (m.act === 'do-finish') finish();
+      else if (m.act === 'do-delete-session') deleteSession(m.id);
+      else if (m.act === 'do-reset') { DB = C.seedDB(); save(); toast('已重置'); ui.screen = 'home'; render(); }
+      else if (m.act === 'do-demo') { loadDemo(); render(); }
+      return;
+    }
+  }
+
+  function diagnose(e) {
+    if (!isOn('intraSetAdvice')) return;
+    const s = currentSession();
+    if (!s) return;
+    const h = C.historyFor(DB, e.exerciseId, s.id);
+    const a = C.diagnose(e, h);
+    if (!a) return;
+    e.advice = e.advice || [];
+    e.advice.push({ at: C.nowIso(), kind: a.kind, accepted: null, text: a.text, weightRange: a.weightRange || null, restTo: a.restTo || null, setIndex: a.setIndex, prevR: a.prevR, curR: a.curR, drop: a.drop, threshold: a.threshold });
+    save();
+  }
+
+  /* ---------- 数据操作 ---------- */
+  function doExport() {
+    const payload = { app: 'fitness-log', version: C.VERSION, exportedAt: C.nowIso(), data: DB };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'fitness-log-' + C.localDate().replace(/-/g, '') + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    DB.settings.lastExportAt = C.nowIso();
+    save();
+    toast('已导出');
+    render();
+  }
+
+  function doImport(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const obj = JSON.parse(reader.result);
+        const err = C.validateImport(obj);
+        if (err) { toast('导入失败：' + err, true); return; }
+        pushUndo();
+        snapshot();
+        const added = C.mergeImport(DB, obj);
+        save();
+        toast('导入完成，新增 ' + added + ' 条训练');
+        render();
+      } catch (e) { toast('导入失败：文件不是合法 JSON', true); }
+    };
+    reader.readAsText(file);
+  }
+
+  function loadDemo() {
+    DB.sessions = [];
+    ui.timer = null;
+    ui.sessionId = null;
+    saveTimer();
+    const today = new Date();
+    const monday = C.startOfWeek(today);
+    const base = { bench_bar: 40, incline_db: 16, fly_cable: 20, lateral_db: 8, pushdown: 25, pullup: 0, row_bar: 40, pulldown: 40, facepull: 15, curl_db: 10, squat_bar: 60, rdl: 50, legpress: 100, legcurl: 30, calf: 40 };
+    for (let w = 5; w >= 0; w--) {
+      ['tue', 'wed', 'thu'].forEach((key, di) => {
+        const d = C.addDays(monday, -w * 7 + di + 1);
+        if (C.localDate(d) > C.localDate(today)) return;
+        const dayType = DB.weekPlan[key];
+        if (!dayType) return;
+        const s = { id: C.localDate(d) + '-' + dayType + '-demo', date: C.localDate(d), dayType, status: 'finished', startedAt: C.localDate(d) + 'T19:00:00+08:00', endedAt: C.localDate(d) + 'T20:05:00+08:00', note: '', entries: [] };
+        (DB.templates[dayType] || []).forEach(t => {
+          const e = C.makeEntry(DB, t.exerciseId, t);
+          const scale = (6 - w) / 6;
+          const baseW = base[t.exerciseId] || 20;
+          const weight = Math.max(2.5, C.floor25(baseW * (0.85 + 0.25 * scale)));
+          const reps = [8, 8, 7, 7].slice(0, t.sets);
+          e.sets = reps.map((r, i) => ({ w: weight, r: r - (i > 1 ? 0 : 0), type: 'work', side: null, rpe: null, done: true, rest: { planned: t.restSec, actual: t.restSec - 10, adjusts: [] } }));
+          s.entries.push(e);
+        });
+        DB.sessions.push(s);
+      });
+    }
+    DB.sessions.sort((a, b) => (a.startedAt || '').localeCompare(b.startedAt || ''));
+    save();
+    toast('示例数据已载入');
+  }
+
+  /* ---------- 事件 ---------- */
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-stop]') && !e.target.closest('[data-act]')) return;
+    const el = e.target.closest('[data-act]');
+    if (el) { e.preventDefault(); onAction(el); }
+  });
+
+  document.addEventListener('pointerdown', e => {
+    const el = e.target.closest('[data-act="inc-w"],[data-act="dec-w"]');
+    if (!el) return;
+    pressTimer = setTimeout(() => { ui.fine = true; vibrate(10); }, 550);
+  });
+  document.addEventListener('pointerup', () => { clearTimeout(pressTimer); });
+  document.addEventListener('contextmenu', e => { if (e.target.closest('.stepper')) e.preventDefault(); });
+
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.matches('[data-rpe]')) {
+      const e2 = findEntry(t.dataset.ex);
+      const st = e2 && e2.sets[Number(t.dataset.i)];
+      if (st) { st.rpe = t.value === '' ? null : Number(t.value); save(); render(); }
+      return;
+    }
+    if (t.id === 'compareN') { DB.settings.compareN = Number(t.value); save(); render(); return; }
+    if (t.id === 'restCompound') { DB.settings.restTimer.compound = Math.max(30, Number(t.value) || 180); save(); return; }
+    if (t.id === 'restIsolation') { DB.settings.restTimer.isolation = Math.max(30, Number(t.value) || 90); save(); return; }
+    if (t.id === 'statsEx') { ui.statsEx = t.value; render(); return; }
+    if (t.id === 'importFile' && t.files && t.files[0]) { doImport(t.files[0]); t.value = ''; return; }
+    if (t.matches('[data-week-day]')) {
+      DB.weekPlan[t.dataset.weekDay] = t.value || null;
+      save();
+      return;
+    }
+    if (t.matches('[data-tpl-field]')) {
+      const tpl = DB.templates[ui.tplDay];
+      const item = tpl && tpl.find(x => x.exerciseId === t.dataset.tplEx);
+      if (item) {
+        const v = Number(t.value);
+        if (!isNaN(v)) item[t.dataset.tplField] = Math.max(0, Math.round(v));
+        save();
+      }
+      return;
+    }
+    if (t.matches('[data-session-note]')) {
+      const s = currentSession();
+      if (s) { s.note = t.value; save(); }
+      return;
+    }
+    if (t.matches('[data-note-ex]')) {
+      const e2 = findEntry(t.dataset.noteEx);
+      if (e2) { e2.note = t.value; save(); }
+      return;
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && activeSession() && isOn('wakeLock')) acquireWake();
+  });
+
+  /* ---------- 启动 ---------- */
+  load();
+  loadTimer();
+  if (DB.sessions.some(s => s.status === 'in_progress')) ui.screen = 'home';
+  applyTheme();
+  render();
+  tick = setInterval(tickFn, 500);
+
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+  }
+})();
+
+</script>
+</body>
+</html>
